@@ -1,0 +1,95 @@
+on:
+  push:
+    paths:
+      - "backend/**"
+  pull_request:
+    paths:
+      - "backend/**"
+
+jobs:
+  build-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK 11
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      - name: Build with Gradle
+        run: |
+          java -version
+          cd backend/
+          ./gradlew shadowjar
+      - uses: actions/upload-artifact@v2
+        with:
+          name: backend
+          path: backend/build/libs/backend-*all.jar
+
+  test-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK 11
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      - name: Check with Gradle
+        run: |
+          java -version
+          cd backend/
+          ./gradlew check
+      - uses: actions/upload-artifact@v2
+        if: success() || failure()
+        with:
+          name: backend-test-reports
+          path: backend/build/reports/
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v2
+        if: success() || failure()
+        with:
+          report_paths: "**/build/test-results/test/TEST-*.xml"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          fail_on_failure: true
+
+  deploy-backend:
+    needs:
+      - build-backend
+      - test-backend
+    runs-on: ubuntu-latest
+    # Only push to stage, hotfix, or main will trigger deployment
+    if: github.event_name == 'push' && (
+      github.ref == 'refs/heads/main' ||
+      github.ref == 'refs/heads/stage' ||
+      github.ref == 'refs/heads/hotfix'
+      )
+    steps:
+      - name: get ansible scripts
+        uses: actions/checkout@v2
+        with:
+          repository: AlphaWallet/attestation.id-deployment
+          path: "attestation.id-deployment"
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - uses: actions/download-artifact@v2
+        with:
+          name: backend
+          path: attestation.id-deployment/backend-ansible/roles/backend/files/
+      - name: deploy
+        env:
+          TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
+          TF_WORKSPACE_ID: ${{ secrets.ATTESTATION_ID_BACKEND_WORKSPACE_ID }}
+          EC2_SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          ANSIBLE_GROUP: stage
+          ANSIBLE_HOST_KEY_CHECKING: False
+          ANSIBLE_FORCE_COLOR: True
+          ANSIBLE_PIPELINING: True
+          ANSIBLE_SSH_CONTROL_PATH: /tmp/ansible-ssh-%%h-%%p-%%r
+        run: |
+          mv -fv attestation.id-deployment/backend-ansible/roles/backend/files/backend-*all.jar \
+            attestation.id-deployment/backend-ansible/roles/backend/files/backend-all.jar
+          tf_outputs_json="$(curl -s -H "Authorization: Bearer ${TF_API_TOKEN}" "https://app.terraform.io/api/v2/workspaces/${TF_WORKSPACE_ID}/current-state-version?include=outputs")"
+          backend_ec2_public_ip="$(echo "${tf_outputs_json}" | jq -r '.included[].attributes | select(.name == "backend_ec2_public_ip").value')"
+          cd attestation.id-deployment/backend-ansible/
+          eval $(ssh-agent -s)
+          echo "${EC2_SSH_PRIVATE_KEY}" | ssh-add -
+          sed -i "/\[${ANSIBLE_GROUP}\]/ a ${backend_ec2_public_ip}" hosts
+          ansible-playbook -i hosts -l "${ANSIBLE_GROUP}" site.yml

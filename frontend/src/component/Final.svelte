@@ -1,0 +1,62 @@
+<script lang="ts">
+  import * as flow from "../common/Flow";
+
+  import { getRawAttestation } from "../common/AppState";
+  import { hexToBigint } from "bigint-conversion";
+  import { parseAttestation } from "../attestation/AttesationUtils";
+
+  import CountDown from "./CountDown.svelte";
+
+  const attestation = getRawAttestation();
+  let notBefore: Date;
+  let notAfter: Date;
+
+  if (!attestation) {
+    flow.current.set(flow.start);
+  } else {
+    notBefore = parseAttestation(attestation.attestation).signedInfo.validity
+      .value.notBefore.generalizedTime;
+    notAfter = parseAttestation(attestation.attestation).signedInfo.validity
+      .value.notAfter.generalizedTime;
+  }
+
+  let close = function () {
+    if (window.location !== window.parent.location) {
+      parent.postMessage(
+        {
+          attestation: attestation.attestation,
+          requestSecret: hexToBigint(attestation.requestSecret),
+          display: false,
+        },
+        "*"
+      );
+    }
+  };
+
+  const apply = function () {
+    flow.saveCurrentStep(flow.start);
+  };
+</script>
+
+{#if attestation}
+  <div class="title">Success!</div>
+  <CountDown {notAfter} {notBefore} />
+  <div class="status">
+    {#if window.location !== window.parent.location}
+      <button on:click={close}>Close</button>
+    {:else}
+      <div>
+        Apply attestation again?
+        <span on:click={apply} href="" class="apply"> Apply Now </span>
+      </div>
+    {/if}
+  </div>
+{/if}
+
+<style>
+  .apply {
+    font-weight: 600;
+    color: #007fed;
+    cursor: pointer;
+  }
+</style>

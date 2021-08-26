@@ -1,0 +1,11 @@
+{
+  "extends": "@tsconfig/svelte/tsconfig.json",
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "module": "ESNext",
+    "target": "ES2020",
+    "types": ["svelte", "jest"]
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules/*", "__sapper__/*", "public/*", "src/__tests__/*"]
+}

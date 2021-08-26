@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>attestation.id SDK Showcase</title>
+    <link
+      href="https://fonts.googleapis.com/css?family=Source+Sans+Pro&display=swap"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link rel="stylesheet" href="/global.css" />
+    <script src="https://stage.attestation.id/assets/javascripts/attestor.js"></script>
+  </head>
+  <style>
+    #attestationFrame {
+      width: 80%;
+      height: 550px;
+      margin: 0px auto;
+      border: 1px solid gray;
+    }
+    #attestation,
+    #requestSecret,
+    #attestorPublicKey {
+      width: 90%;
+      height: 150px;
+    }
+    #requestSecret {
+      width: 90%;
+      height: 50px;
+    }
+    #attestorPublicKey {
+      width: 90%;
+      height: 120px;
+    }
+    .contentDiv {
+      margin-left: 30px;
+    }
+
+    .modal {
+      display: none; /* Hidden by default */
+      position: fixed; /* Stay in place */
+      z-index: 1; /* Sit on top */
+      left: 0;
+      top: 0;
+      width: 100%; /* Full width */
+      height: 100%; /* Full height */
+      overflow: auto; /* Enable scroll if needed */
+      background-color: rgb(0, 0, 0); /* Fallback color */
+      background-color: rgba(0, 0, 0, 0.4); /* Black w/ opacity */
+    }
+
+    /* Modal Content/Box */
+    .modal-content {
+      background-color: #fefefe;
+      margin: 15% auto; /* 15% from the top and centered */
+      padding: 20px;
+      border: 1px solid #888;
+      width: 80%; /* Could be more or less, depending on screen size */
+    }
+
+    /* The Close Button */
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .close:hover,
+    .close:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    input {
+      width: 20px;
+      margin: 0px 20px;
+    }
+
+    button {
+      width: 200px;
+      margin-left: 20px;
+      height: 40px;
+      padding: 0px;
+      line-height: 40px;
+    }
+
+    .operation {
+      display: inline-flex;
+      align-items: center;
+    }
+  </style>
+  <script>
+    function getAttestation() {
+      document.getElementById("btn").disabled = true;
+
+      const parent = document.querySelector('input[name="parent"]:checked')
+        .value;
+      let modal = document.getElementById("myModal");
+
+      let option = {};
+      if (parent === "container") {
+        option.container = parent;
+        window.addEventListener("message", (event) => {
+          if (event.data.display) {
+            modal.style.display = "block";
+            let span = document.getElementsByClassName("close")[0];
+            span.onclick = function () {
+              modal.style.display = "none";
+            };
+          }
+        });
+      }
+
+      Attestor.onReady((data) => {
+        console.log(data.attestation);
+        console.log(data.requestSecret);
+        document.getElementById("attestation").value = data.attestation;
+        document.getElementById("requestSecret").value = data.requestSecret;
+        modal.style.display = "none";
+      }, option);
+    }
+  </script>
+  <body>
+    <div>
+      <h2>
+        Select a Container for Application page when an attestation is not saved
+        in local storage
+      </h2>
+      <div class="operation">
+        <input type="radio" name="parent" value="document" checked /> Document
+        <input type="radio" name="parent" value="container" /> Container
+
+        <button type="button" id="btn" onclick="getAttestation()">
+          Get an Attestation!
+        </button>
+      </div>
+    </div>
+    <hr />
+    <div>
+      <h2>Your Attestation Information</h2>
+      <div id="successDiv">
+        Attestation:<br />
+        <textarea id="attestation"></textarea><br />
+
+        requestSecret:<br />
+        <textarea id="requestSecret"></textarea>
+      </div>
+    </div>
+    <div id="myModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <div id="container"></div>
+      </div>
+    </div>
+  </body>
+</html>

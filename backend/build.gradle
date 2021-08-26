@@ -1,0 +1,58 @@
+plugins {
+    id('com.github.johnrengelman.shadow') version '6.1.0'
+    id('io.micronaut.application') version '1.2.0'
+    id 'groovy'
+}
+
+version = '0.1'
+group = 'backend'
+
+repositories {
+    mavenCentral()
+}
+
+micronaut {
+    runtime('netty')
+    testRuntime('spock2')
+    processing {
+        incremental(true)
+        annotations('backend.*')
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'lib')
+    implementation('io.micronaut:micronaut-validation')
+    implementation('io.micronaut:micronaut-runtime')
+    implementation('io.micronaut:micronaut-http-client')
+    implementation('io.micronaut:micronaut-http-server-netty')
+    implementation('com.sendgrid:sendgrid-java:4.7.1')
+    implementation('software.amazon.awssdk:ses:2.13.39')
+    implementation('com.auth0:auth0:1.33.0')
+    implementation('org.web3j:core:4.8.4')
+    implementation('org.apache.logging.log4j:log4j-to-slf4j:2.14.1')
+    runtimeOnly('ch.qos.logback:logback-classic')
+    runtimeOnly('org.codehaus.janino:janino:3.1.6')
+    runtimeOnly('ch.qos.logback.contrib:logback-json-classic:0.1.5')
+    runtimeOnly('ch.qos.logback.contrib:logback-jackson:0.1.5')
+    runtimeOnly('com.google.code.gson:gson:2.8.5')
+    runtimeOnly('ca.pjer:logback-awslogs-appender:1.6.0')
+}
+
+task prepareKotlinBuildScriptModel {
+}
+
+application {
+    mainClass.set('id.attestation.Application')
+}
+
+test {
+    environment 'RECAPTCHA_KEY', 'XXXX'
+    environment 'ATTESTOR_PRIVATE_KEY', 'MIICSwIBADCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBBIIBVTCCAVECAQEEIP0NZmYQRZgBrndcBR6RUJdEfBaQoF+/yUNQHpEM7s7GoIHjMIHgAgEBMCwGByqGSM49AQECIQD////////////////////////////////////+///8LzBEBCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAcEQQR5vmZ++dy7rFWgYpXOhwsHApv82y3OKNlZ8oFbFvgXmEg62ncmo8RlXaT7/A4RCKj9F7RIpoVUGZxH0I/7ENS4AiEA/////////////////////rqu3OavSKA7v9JejNA2QUECAQGhRANCAASs39hcmVWwLtOaxxgp26vuszAncsReQC1Rjb6K7IixLQESpfQ1cNaqivTzDYTgzz1cQ4GswxUvF7HOHaqL0gyP'
+    environment 'DEVCON_PUBLIC_KEY', '950C7C0BED23C3CAC5CC31BBB9AAD9BB5532387882670AC2B1CDF0799AB0EBC764C267F704E8FDDA0796AB8397A4D2101024D24C4EFFF695B3A417F2ED0E48CD'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}

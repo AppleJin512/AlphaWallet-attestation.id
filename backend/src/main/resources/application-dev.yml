@@ -1,0 +1,5 @@
+micronaut:
+  http:
+    client:
+      proxy-type: SOCKS
+      proxy-address: 127.0.0.1:10808

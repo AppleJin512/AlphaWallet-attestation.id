@@ -1,0 +1,112 @@
+on:
+  push:
+    paths:
+      - "frontend/**"
+  pull_request:
+    paths:
+      - "frontend/**"
+
+jobs:
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: env injection
+        run: |
+          BRANCH_NAME="${GITHUB_REF#refs/*/}"
+          case "${BRANCH_NAME}" in
+          stage)
+            BASE_BACKEND_URL=https://backend-stage.attestation.id
+            ;;
+          *)
+            BASE_BACKEND_URL=https://backend-stage.attestation.id
+            ;;
+          esac
+          echo "BASE_BACKEND_URL=https://backend-stage.attestation.id" >> $GITHUB_ENV
+      - name: Make envfile
+        uses: SpicyPizza/create-envfile@v1
+        with:
+          envkey_BASE_BACKEND_URL: ${{ env.BASE_BACKEND_URL }}
+          envkey_RECAPTCHA_CLIENT_KEY: ${{ secrets.RECAPTCHA_CLIENT_KEY }}
+          envkey_VALIDITY: 3600
+          envkey_ATTESTOR: AlphaWallet
+          file_name: frontend/.env
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 14
+      - run: |
+          echo -n "Node version: "
+          node -v
+          echo -n "Npm version: "
+          npm -v
+      - name: frontend building
+        run: |
+          cd frontend/
+          npm ci
+          npm run build
+      - uses: actions/upload-artifact@v2
+        with:
+          name: frontend
+          path: frontend/public/
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 14
+      - run: |
+          echo -n "Node version: "
+          node -v
+          echo -n "Npm version: "
+          npm -v
+      - name: testing
+        run: |
+          cd frontend/
+          npm ci
+          npm run test -- --ci --colors
+      - uses: actions/upload-artifact@v2
+        if: success() || failure()
+        with:
+          name: frontend-test-reports
+          path: frontend/reports/
+      - uses: IgnusG/jest-report-action@master
+        if: success() || failure()
+        with:
+          access-token: ${{ secrets.GITHUB_TOKEN }}
+          junit-file: reports/junit/junit.xml
+          working-directory: frontend/
+
+  deploy-frontend:
+    needs:
+      - build-frontend
+      - test-frontend
+    runs-on: ubuntu-latest
+    # Only push to stage, hotfix, or main will trigger deployment
+    if: github.event_name == 'push' && (
+      github.ref == 'refs/heads/main' ||
+      github.ref == 'refs/heads/stage' ||
+      github.ref == 'refs/heads/hotfix'
+      )
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: frontend
+          path: frontend/public/
+      - name: deploy
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          TF_WORKSPACE_ID: ${{ secrets.ATTESTATION_ID_FRONTEND_WORKSPACE_ID }}
+          TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
+        run: |
+          tf_outputs_json="$(curl -s -H "Authorization: Bearer ${TF_API_TOKEN}" "https://app.terraform.io/api/v2/workspaces/${TF_WORKSPACE_ID}/current-state-version?include=outputs")"
+          backend_ec2_public_ip="$(echo "${tf_outputs_json}" | jq -r '.included[].attributes | select(.name == "backend_ec2_public_ip").value')"
+          s3_bucket_id="$(echo "${tf_outputs_json}" | jq -r '.included[].attributes | select(.name == "s3_id").value')"
+          cdn_id="$(echo "${tf_outputs_json}" | jq -r '.included[].attributes | select(.name == "cdn_id").value')"
+          aws_region="$(echo "${tf_outputs_json}" | jq -r '.included[].attributes | select(.name == "aws_region").value')"
+          aws --version
+          export AWS_DEFAULT_REGION="${aws_region}"
+          aws s3 sync frontend/public/ "s3://${s3_bucket_id}/" --cache-control 'max-age=86400' --quiet && \
+            aws cloudfront create-invalidation --distribution-id "${cdn_id}" --paths '/*'

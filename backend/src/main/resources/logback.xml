@@ -1,0 +1,55 @@
+<configuration>
+
+    <!-- Register the shutdown hook to allow logback to cleanly stop appenders -->
+    <!-- this is strongly recommend when using AwsLogsAppender in async mode, -->
+    <!-- to allow the queue to flush on exit -->
+    <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>
+
+    <!-- The actual AwsLogsAppender (asynchronous mode because of maxFlushTimeMillis > 0) -->
+    <appender name="ASYNC_AWS_LOGS" class="ca.pjer.logback.AwsLogsAppender">
+
+        <layout class="ch.qos.logback.contrib.json.classic.JsonLayout">
+            <jsonFormatter class="ch.qos.logback.contrib.jackson.JacksonJsonFormatter"/>
+        </layout>
+
+        <!-- Hardcoded Log Group Name -->
+        <logGroupName>${CLOUDWATCH_AWS_LOG_GROUP:-/service/attestation_backend}</logGroupName>
+
+        <!-- Hardcoded AWS region -->
+        <!-- So even when running inside an AWS instance in us-west-1, logs will go to us-west-2 -->
+        <logRegion>${CLOUDWATCH_AWS_REGION:-ap-southeast-1}</logRegion>
+
+        <!-- Maximum quiet time in millisecond (0 is the default) -->
+        <!-- will flush when met, even if the batch size is not met (see maxBatchLogEvents) -->
+        <maxFlushTimeMillis>30000</maxFlushTimeMillis>
+
+        <!-- Retention value for log groups, 0 for infinite see -->
+        <!-- https://docs.aws.amazon.com/AmazonCloudWatchLogs/latest/APIReference/API_PutRetentionPolicy.html for other -->
+        <!-- possible values -->
+
+        <retentionTimeDays>7</retentionTimeDays>
+        <accessKeyId>${CLOUDWATCH_AWS_ACCESS_KEY_ID}</accessKeyId>
+        <secretAccessKey>${CLOUDWATCH_AWS_SECRET_ACCESS_KEY}</secretAccessKey>
+    </appender>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <withJansi>true</withJansi>
+        <!-- encoders are assigned the type
+             ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
+        <encoder>
+            <pattern>%cyan(%d) %highlight(%-5level) %magenta(%logger{36}) - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="io.netty" level="INFO"/>
+    <logger name="io.micronaut" level="INFO"/>
+
+    <root level="${LOG_LEVEL}">
+        <appender-ref ref="STDOUT"/>
+        <if condition='Boolean.valueOf(p("SEND_CLOUDWATCH"))'>
+            <then>
+                <appender-ref ref="ASYNC_AWS_LOGS"/>
+            </then>
+        </if>
+    </root>
+</configuration>
