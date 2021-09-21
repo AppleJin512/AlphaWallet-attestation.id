@@ -25,13 +25,13 @@ public class MagicLinkParser {
         if (StringUtils.isEmpty(secretStr)) {
             throw new IllegalAttestationRequestException("secret param missing from magic link");
         }
-        BigInteger secret = BigInteger.valueOf(parseLong(secretStr));
+        BigInteger secret = convert(secretStr);
         return new MagicLink(host, encodedTicket, secret);
     }
 
-    private static long parseLong(String s) {
+    private static BigInteger convert(String s) {
         try {
-            return Long.parseLong(s);
+            return new BigInteger(s);
         } catch (NumberFormatException e) {
             throw new IllegalAttestationRequestException("secret param is not integer");
         }
