@@ -31,6 +31,7 @@ dependencies {
     implementation('com.auth0:auth0:1.33.0')
     implementation('org.web3j:core:4.8.4')
     implementation('org.apache.logging.log4j:log4j-to-slf4j:2.14.1')
+    implementation('org.tokenscript:attestation:0.1.4')
     runtimeOnly('ch.qos.logback:logback-classic')
     runtimeOnly('org.codehaus.janino:janino:3.1.6')
     runtimeOnly('ch.qos.logback.contrib:logback-json-classic:0.1.5')

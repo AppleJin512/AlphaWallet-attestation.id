@@ -1,12 +1,12 @@
 package id.attestation.utils;
 
-import com.alphawallet.attestation.IdentifierAttestation;
-import com.alphawallet.attestation.SignedIdentityAttestation;
-import com.alphawallet.attestation.core.ASNEncodable;
-import com.alphawallet.attestation.core.AttestationCrypto;
-import com.alphawallet.attestation.core.SignatureUtility;
-import com.alphawallet.attestation.eip712.Eip712AttestationRequest;
-import com.alphawallet.ethereum.ERC721Token;
+import org.tokenscript.attestation.IdentifierAttestation;
+import org.tokenscript.attestation.SignedIdentifierAttestation;
+import org.tokenscript.attestation.core.ASNEncodable;
+import org.tokenscript.attestation.core.AttestationCrypto;
+import org.tokenscript.attestation.core.SignatureUtility;
+import org.tokenscript.attestation.eip712.Eip712AttestationRequest;
+import org.tokenscript.attestation.ERC721Token;
 import id.attestation.data.AttestationWebResponse;
 import id.attestation.data.PublicAttestationWebResponse;
 import id.attestation.exception.EncryptOtpFailedException;
@@ -137,7 +137,7 @@ public class CryptoUtils {
             Date now = new Date();
             att.setNotValidBefore(now);
             att.setNotValidAfter(new Date(Clock.systemUTC().millis() + validity * 1000));
-            SignedIdentityAttestation signed = new SignedIdentityAttestation(att, keys);
+            SignedIdentifierAttestation signed = new SignedIdentifierAttestation(att, keys);
             return new AttestationWebResponse(derString(signed), encodePublicKey(keys.getPublic()));
         } catch (IllegalArgumentException e) {
             throw new IllegalAttestationRequestException(e.getMessage());
@@ -152,7 +152,7 @@ public class CryptoUtils {
         try {
             AsymmetricKeyParameter publicKey = getECCPublicKey(message, signature, ethAddress);
             IdentifierAttestation att = new IdentifierAttestation(String.valueOf(id), identifier, publicKey);
-            SignedIdentityAttestation signed = new SignedIdentityAttestation(att, attestorKeys);
+            SignedIdentifierAttestation signed = new SignedIdentifierAttestation(att, attestorKeys);
             return new PublicAttestationWebResponse(derString(signed), encodePublicKey(attestorKeys.getPublic()), encodePublicKey(publicKey));
         } catch (SignatureException e) {
             LOGGER.error("Can't create a public key with ({}, {}, {}), caused by: {}", id, message, signature, e);
@@ -166,7 +166,7 @@ public class CryptoUtils {
 
     public static AttestationWebResponse constructNftAttest(AsymmetricKeyParameter pk, String publicAttestation, ERC721Token[] tokens) {
         try {
-            SignedIdentityAttestation att = new SignedIdentityAttestation(Base64.getDecoder().decode(publicAttestation.getBytes(StandardCharsets.UTF_8)), pk);
+            SignedIdentifierAttestation att = new SignedIdentifierAttestation(Base64.getDecoder().decode(publicAttestation.getBytes(StandardCharsets.UTF_8)), pk);
             NFTAttestation nftAttestation = new NFTAttestation(att, tokens);
             return new AttestationWebResponse(Numeric.toHexString(nftAttestation.getDerEncoding()), encodePublicKey(pk));
         } catch (IOException e) {

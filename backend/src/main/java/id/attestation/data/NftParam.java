@@ -1,6 +1,6 @@
 package id.attestation.data;
 
-import com.alphawallet.ethereum.ERC721Token;
+import org.tokenscript.attestation.ERC721Token;
 
 import java.math.BigInteger;
 

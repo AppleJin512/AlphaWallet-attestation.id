@@ -1,12 +1,12 @@
 package id.attestation;
 
-import com.alphawallet.attestation.IdentifierAttestation.AttestationType;
-import com.alphawallet.attestation.ValidationTools;
-import com.alphawallet.attestation.core.AttestationCrypto;
-import com.alphawallet.attestation.core.DERUtility;
-import com.alphawallet.attestation.core.URLUtility;
-import com.alphawallet.attestation.eip712.Eip712AttestationRequest;
-import com.alphawallet.ethereum.ERC721Token;
+import org.tokenscript.attestation.IdentifierAttestation.AttestationType;
+import org.tokenscript.attestation.ValidationTools;
+import org.tokenscript.attestation.core.AttestationCrypto;
+import org.tokenscript.attestation.core.DERUtility;
+import org.tokenscript.attestation.core.URLUtility;
+import org.tokenscript.attestation.eip712.Eip712AttestationRequest;
+import org.tokenscript.attestation.ERC721Token;
 import id.attestation.data.*;
 import id.attestation.exception.IllegalAttestationRequestException;
 import id.attestation.exception.NoRecapthaResponseException;
