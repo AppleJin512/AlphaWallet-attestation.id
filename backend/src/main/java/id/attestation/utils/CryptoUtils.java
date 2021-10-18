@@ -34,6 +34,7 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.twittertip.CoSignedIdentifierAttestation;
 import org.web3j.crypto.Keys;
 import org.web3j.crypto.Sign;
 import org.web3j.utils.Numeric;
@@ -156,7 +157,7 @@ public class CryptoUtils {
             return new PublicAttestationWebResponse(derString(signed), encodePublicKey(attestorKeys.getPublic()), encodePublicKey(publicKey));
         } catch (SignatureException e) {
             LOGGER.error("Can't create a public key with ({}, {}, {}), caused by: {}", id, message, signature, e);
-            throw new PublicKeyCreationException("Cannot create a public key for creating a public attestation.");
+            throw new PublicKeyCreationException("Invalid signature");
         } catch (IllegalArgumentException e) {
             throw new IllegalAttestationRequestException(e.getMessage());
         } catch (Exception e) {
@@ -171,9 +172,9 @@ public class CryptoUtils {
             return new AttestationWebResponse(Numeric.toHexString(nftAttestation.getDerEncoding()), encodePublicKey(pk));
         } catch (IOException e) {
             LOGGER.error("Can't create a public attestation with ({}), caused by: {}", publicAttestation, e);
-            throw new IllegalAttestationRequestException("Cannot create a publicAttestation for creating a nft attestation.");
+            throw new IllegalAttestationRequestException("Cannot create a public attestation.");
         } catch (IllegalArgumentException e) {
-            LOGGER.error("Can't create a signed identity attestation, caused by: {}", e.getMessage(), e);
+            LOGGER.error("Can't create a signed identifier attestation, caused by: {}", e.getMessage(), e);
             throw new IllegalAttestationRequestException(e.getMessage());
         } catch (Exception e) {
             throw new RuntimeException("Something wrong", e);
@@ -187,7 +188,7 @@ public class CryptoUtils {
             pk = SignatureUtility.restoreKeyFromSPKI(Base64.getDecoder().decode(publicKey.getBytes(StandardCharsets.UTF_8)));
         } catch (Exception e) {
             LOGGER.error("Can't create a public key with ({}), caused by: {}", publicKey, e);
-            throw new PublicKeyCreationException("Cannot create a public key for creating a nft attestation.");
+            throw new PublicKeyCreationException("Cannot create a public key.");
         }
 
         try {
@@ -196,9 +197,34 @@ public class CryptoUtils {
             return new AttestationWebResponse(derString(signed), encodePublicKey(attestorPublicKey));
         } catch (IOException e) {
             LOGGER.error("Can't create a nft attestation with ({}), caused by: {}", nftAttestation, e);
-            throw new IllegalAttestationRequestException("Cannot create a nftAttestation for creating a signed nft attestation.");
+            throw new IllegalAttestationRequestException("Cannot create a nft attestation.");
         } catch (IllegalArgumentException e) {
             LOGGER.error("Can't create a signed nft attestation, caused by: {}", e.getMessage(), e);
+            throw new IllegalAttestationRequestException(e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException("Something wrong", e);
+        }
+    }
+
+    public static AttestationWebResponse constructCoSignedIdentifierAttest(String publicKey, AsymmetricKeyParameter attestorPublicKey
+            , String publicAttestation, String signature) {
+        AsymmetricKeyParameter pk;
+        try {
+            pk = SignatureUtility.restoreKeyFromSPKI(Base64.getDecoder().decode(publicKey.getBytes(StandardCharsets.UTF_8)));
+        } catch (Exception e) {
+            LOGGER.error("Can't create a public key with ({}), caused by: {}", publicKey, e);
+            throw new PublicKeyCreationException("Cannot create a public key.");
+        }
+
+        try {
+            SignedIdentifierAttestation signedIdentifier = new SignedIdentifierAttestation(Base64.getDecoder().decode(publicAttestation.getBytes(StandardCharsets.UTF_8)), attestorPublicKey);
+            CoSignedIdentifierAttestation coSigned = new CoSignedIdentifierAttestation(signedIdentifier, pk, Numeric.hexStringToByteArray(signature));
+            return new AttestationWebResponse(derString(coSigned), encodePublicKey(attestorPublicKey));
+        } catch (IOException e) {
+            LOGGER.error("Can't create a public attestation with ({}), caused by: {}", publicAttestation, e);
+            throw new IllegalAttestationRequestException("Cannot create a public attestation.");
+        } catch (IllegalArgumentException e) {
+            LOGGER.error("Can't create a cosigned identifier attestation, caused by: {}", e.getMessage(), e);
             throw new IllegalAttestationRequestException(e.getMessage());
         } catch (Exception e) {
             throw new RuntimeException("Something wrong", e);

@@ -151,6 +151,13 @@ public class ApiController {
                 , request.getNftAttestation(), request.getSignature()));
     }
 
+    @Post("/attestation/cosigned")
+    @ExecuteOn(TaskExecutors.IO)
+    public HttpResponse<AttestationWebResponse> createCoSignedIdentifierAttestation(@Body @Valid CoSignedIdentifierAttestationWebRequest request) {
+        return HttpResponse.created(CryptoUtils.constructCoSignedIdentifierAttest(request.getPublicKey(), keys.getPublic()
+                , request.getPublicAttestation(), request.getSignature()));
+    }
+
     private Eip712AttestationRequest createAttestRequest(AttestationWebRequest request) {
         Eip712AttestationRequest attestationRequest;
         try {

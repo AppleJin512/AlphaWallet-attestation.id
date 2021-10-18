@@ -350,6 +350,43 @@ class ApiControllerSpec extends Specification {
         result.attestorPublicKey
     }
 
+    @Unroll
+    void "/attestation/cosigned: should return bad request for invalid request parameters"() {
+        given:
+        HttpRequest httpRequest = HttpRequest.POST('/attestation/cosigned', new CoSignedIdentifierAttestationWebRequest(publicKey, attestation, signature))
+
+        when:
+        client.toBlocking().exchange(httpRequest, OtpResponse)
+
+        then:
+        HttpClientResponseException thrown = thrown(HttpClientResponseException)
+        thrown.status == HttpStatus.BAD_REQUEST
+
+        where:
+        publicKey               | attestation             | signature
+        null                    | TestUtils.paForCosigned | TestUtils.signatureForCosigned
+        TestUtils.pkForCosigned | ""                      | TestUtils.signatureForCosigned
+        TestUtils.pkForCosigned | TestUtils.paForCosigned | null
+        "bad key"               | TestUtils.paForCosigned | TestUtils.signatureForCosigned
+        TestUtils.pkForCosigned | "bad attestation"       | TestUtils.signatureForCosigned
+        TestUtils.pkForCosigned | TestUtils.paForCosigned | "bad signature"
+    }
+
+    void "/attestation/cosigned should work"() {
+        when:
+        HttpResponse response = client.toBlocking().
+                exchange(HttpRequest.POST('/attestation/cosigned'
+                        , new CoSignedIdentifierAttestationWebRequest(TestUtils.pkForCosigned, TestUtils.paForCosigned
+                        , TestUtils.signatureForCosigned)),
+                        AttestationWebResponse)
+        AttestationWebResponse result = response.body()
+
+        then:
+        response.code() == HttpStatus.CREATED.code
+        result.attestation
+        result.attestorPublicKey
+    }
+
     @MockBean(EmailService)
     EmailService emailService() {
         Mock(EmailService)

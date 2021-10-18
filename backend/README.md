@@ -146,7 +146,7 @@ curl -X POST -H 'Content-Type: application/json' -i http://localhost:8080/api/at
 }'
 ```
 
-### Ask for an Signed Nft attestation
+### Ask for a Signed Nft attestation
 
 - method: POST
 - url: /api/attestation/signed-nft
@@ -168,7 +168,29 @@ curl -X POST -H 'Content-Type: application/json' -i http://localhost:8080/api/at
 }'
 ```
 
-In [ApiControllerSpec.groovy](src/test/groovy/id/attestation/ApiControllerSpec.groovy), you can find hwo to fire an OTP request and an Attestation request.
+### Ask for a CoSigned Identifier attestation
+
+- method: POST
+- url: /api/attestation/cosigned
+- request: json format
+  - publicKey, BASE64-Encoded string
+  - publicAttestation, BASE64-Encoded string
+  - signature, signature of publicAttestation hex string
+- response: json format
+  - attestation: attestation value, hex string
+  - attestorPublicKey: public key of the attestor, BASE64-Encoded string
+
+Example:
+
+```shell
+curl -X POST -H 'Content-Type: application/json' -i http://localhost:8080/api/attestation/cosigned --data '{
+  "publicAttestation": "MIICFDCCAcGgAwIBEwIBATAJBgcqhkjOPQQCMBkxFzAVBgNVBAMMDmF0dGVzdGF0aW9uLmlkMCIYDzIwMjExMDEzMDk0MDA3WhgPOTk5OTEyMzExNTU5NTlaMDYxNDAyBgkrBgEEAYF6ATkMJWh0dHBzOi8vdHdpdHRlci5jb20vMTQxOTA0ODYgMTQxOTA0ODYwggEzMIHsBgcqhkjOPQIBMIHgAgEBMCwGByqGSM49AQECIQD////////////////////////////////////+///8LzBEBCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAcEQQR5vmZ++dy7rFWgYpXOhwsHApv82y3OKNlZ8oFbFvgXmEg62ncmo8RlXaT7/A4RCKj9F7RIpoVUGZxH0I/7ENS4AiEA/////////////////////rqu3OavSKA7v9JejNA2QUECAQEDQgAEM16FqEg9xEkc97+17ks0LzJwoga17/esoLxYG/V6qRgnc+heWzm2zjArzxVPedKNmapDBuipnvVQsU41NInmiTAJBgcqhkjOPQQCA0IAJp2Py2PmoQiUxh9FZ9LrgKHy64M8XYxzaCE8GYKLF4VvzBcCKLNlxl+m++vSgXHqWKutci6c+AV4Jk+si4DtUhw=",
+  "publicKey": "MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABDNehahIPcRJHPe/te5LNC8ycKIGte/3rKC8WBv1eqkYJ3PoXls5ts4wK88VT3nSjZmqQwboqZ71ULFONTSJ5ok=",
+  "signature": "0x1a345af6b0ddb778c77c92b04258264206f9bb6b234ede3dd840c74a5d6bb8be0100b53a1a683060a42bbcf9e64691c688f0d6b7855ea44a13c9381ab7a31dc11c"
+}'
+```
+
+In [ApiControllerSpec.groovy](src/test/groovy/id/attestation/ApiControllerSpec.groovy), you can find all code examples of the RESTful API endpoints.
 
 ## How to run
 
