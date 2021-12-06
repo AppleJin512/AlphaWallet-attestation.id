@@ -40,6 +40,8 @@ dependencies {
     runtimeOnly('ch.qos.logback.contrib:logback-json-classic:0.1.5')
     runtimeOnly('ch.qos.logback.contrib:logback-jackson:0.1.5')
     runtimeOnly('ca.pjer:logback-awslogs-appender:1.6.0')
+    // required by logback if condition: http://logback.qos.ch/manual/configuration.html#conditional
+    runtimeOnly('org.codehaus.janino:janino:3.1.6')
 
     // Load MockAuthenticationService in test
     testImplementation(project(':plugins:api'))
