@@ -23,6 +23,8 @@ class TestUtils {
     static String message = "536f6d65207465787420666f72204175746f6772617068657220746f207369676e20736f2077652063616e2067656e657261746520746865206174746573746174696f6e"
     static String signature = "0xa31ab92f335062cee755257a8157fbef20d98abeb06ec3fd6975b2ab3018c9327daaf2d91fc4efdffcd10c2ddcca37f37ffecf16fb3910f6881b39bb99e1fcf01c"
     static String twitterIdentifier = "https://twitter.com/foxgem"
+    static String mock1Identifier = "http://mock1.example.com/abcfy2"
+    static String mock2Identifier = "https://mock2.example.com/abcfy2"
 
     static String publicAttestation = "MIICEjCCAb+gAwIBEwIBATAJBgcqhkjOPQQCMBkxFzAVBgNVBAMMDmF0dGVzdGF0aW9uLmlkMCIYDzIwMjEwODI2MTI0ODU5WhgPOTk5OTEyMzExNTU5NTlaMDQxMjAwBgkrBgEEAYF6ATkMI2h0dHBzOi8vdHdpdHRlci5jb20vZm94Z2VtIDE0MTkwNDg2MIIBMzCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBA0IABDNehahIPcRJHPe/te5LNC8ycKIGte/3rKC8WBv1eqkYJ3PoXls5ts4wK88VT3nSjZmqQwboqZ71ULFONTSJ5okwCQYHKoZIzj0EAgNCAHIYNnna8rY3jOKMsvCy6fYXiU9TAWjKqgkJNVbQQEHcU0WHcw+C0pwpQeR9rCbMxaDHi8z6x6K4Th4EaI7VrOwc"
     static def nfts1 = new NftParam[]{new NftParam("0xa567f5a165545fa2639bbda79991f105eadf8522", new BigInteger("1"))}

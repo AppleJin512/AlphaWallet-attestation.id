@@ -1,11 +1,25 @@
 package id.attestation;
 
+import id.attestation.service.PluginService;
 import id.attestation.utils.CryptoUtils;
+import io.micronaut.context.event.ApplicationEventListener;
 import io.micronaut.runtime.Micronaut;
+import io.micronaut.runtime.server.event.ServerStartupEvent;
+import jakarta.inject.Inject;
 
 import java.io.IOException;
 
-public class Application {
+public class Application implements ApplicationEventListener<ServerStartupEvent> {
+
+    @Inject
+    PluginService pluginService;
+
+    @Override
+    public void onApplicationEvent(ServerStartupEvent event) {
+        pluginService.loadPlugins();
+        pluginService.startPlugins();
+    }
+
     public static void main(String[] args) throws IOException {
         if (args.length == 0 || "server".equalsIgnoreCase(args[0])) {
             Micronaut.run(Application.class);

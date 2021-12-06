@@ -11,8 +11,7 @@ public class PublicAttestationWebRequest {
 
     @NotNull
     @NotBlank
-    @Positive
-    private long id;
+    private String id;
 
     @NotNull
     @NotBlank
@@ -62,18 +61,18 @@ public class PublicAttestationWebRequest {
         this.identifier = identifier;
     }
 
-    public long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
     public PublicAttestationWebRequest() {
     }
 
-    public PublicAttestationWebRequest(long id, String message, String signature, String ethAddress, String identifier) {
+    public PublicAttestationWebRequest(String id, String message, String signature, String ethAddress, String identifier) {
         this.id = id;
         this.message = message;
         this.signature = signature;

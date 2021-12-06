@@ -1,16 +1,10 @@
 package id.attestation;
 
-import org.tokenscript.attestation.IdentifierAttestation.AttestationType;
-import org.tokenscript.attestation.ValidationTools;
-import org.tokenscript.attestation.core.AttestationCrypto;
-import org.tokenscript.attestation.core.DERUtility;
-import org.tokenscript.attestation.core.URLUtility;
-import org.tokenscript.attestation.eip712.Eip712AttestationRequest;
-import org.tokenscript.attestation.ERC721Token;
 import id.attestation.data.*;
 import id.attestation.exception.IllegalAttestationRequestException;
 import id.attestation.exception.NoRecapthaResponseException;
 import id.attestation.exception.RecaptchaVerifyFailedException;
+import id.attestation.service.PluginService;
 import id.attestation.service.auth.AuthenticationService;
 import id.attestation.service.email.EmailData;
 import id.attestation.service.email.EmailService;
@@ -21,25 +15,40 @@ import id.attestation.utils.IdentifierExtractor;
 import id.attestation.utils.MagicLinkParser;
 import io.micronaut.context.annotation.Value;
 import io.micronaut.core.util.StringUtils;
+import io.micronaut.http.HttpHeaders;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.*;
 import io.micronaut.scheduling.TaskExecutors;
 import io.micronaut.scheduling.annotation.ExecuteOn;
+import jakarta.inject.Inject;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.util.encoders.DecoderException;
 import org.bouncycastle.util.encoders.Hex;
 import org.devcon.ticket.Ticket;
 import org.devcon.ticket.TicketDecoder;
+import org.pf4j.PluginWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.tokenscript.attestation.ERC721Token;
+import org.tokenscript.attestation.IdentifierAttestation.AttestationType;
+import org.tokenscript.attestation.ValidationTools;
+import org.tokenscript.attestation.core.AttestationCrypto;
+import org.tokenscript.attestation.core.DERUtility;
+import org.tokenscript.attestation.core.URLUtility;
+import org.tokenscript.attestation.eip712.Eip712AttestationRequest;
+import reactor.core.publisher.Mono;
 
 import javax.validation.Valid;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Controller("/api")
 public class ApiController {
@@ -48,23 +57,23 @@ public class ApiController {
 
     private final EmailService emailService;
     private final RecaptchaService recaptchaService;
-    private final AuthenticationService authenticationService;
     private final String recaptchaKey;
     private final AsymmetricCipherKeyPair keys;
     private final String devconPubkeyHex;
     private TicketDecoder ticketDecoder;
+
+    @Inject
+    private PluginService pluginService;
 
     public ApiController(@Value("${RECAPTCHA_KEY:none}") String recaptchaKey
             , @Value("${ATTESTOR_PRIVATE_KEY:none}") String attestorPrivateKey
             , @Value("${DEVCON_PUBLIC_KEY:none}") String devconPubkeyHex
             , EmailService emailService
             , RecaptchaService recaptchaService
-            , AuthenticationService authenticationService
     ) {
         this.recaptchaKey = recaptchaKey;
         this.emailService = emailService;
         this.recaptchaService = recaptchaService;
-        this.authenticationService = authenticationService;
         // The string list expected by DERUtility.restoreBase64Keys should have the following format:
         // [prefix, content, postfix]
         // Only content is needed.
@@ -79,7 +88,7 @@ public class ApiController {
         verifyRecapthca(recaptchaResponse);
         String otp = CryptoUtils.generateOtp();
         OtpResponse response = new OtpResponse(CryptoUtils.encryptWithRSAOAEP(request.getPublicKey(), otp));
-        if (request.getType().equalsIgnoreCase("mail")) {
+        if ("mail".equalsIgnoreCase(request.getType())) {
             emailService.send(new EmailData(request.getValue(), "Your OTP for Attestation Request", EmailTemplate.createEmailBody(otp)));
         }
         return HttpResponse.created(response);
@@ -107,8 +116,8 @@ public class ApiController {
 
     @Post("/attestation/public")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<PublicAttestationWebResponse> createPublicAttestation(@Body @Valid PublicAttestationWebRequest request,
-                                                                              @Header("x-ac") String accessToken) {
+    public HttpResponse<PublicAttestationWebResponse> createPublicAttestation(
+            @Body @Valid PublicAttestationWebRequest request, HttpHeaders headers) {
         if (!isHex(request.getMessage()) || !isHex(request.getSignature().substring(2))) {
             throw new IllegalAttestationRequestException("message or signature is not hex string.");
         }
@@ -117,11 +126,47 @@ public class ApiController {
             throw new IllegalAttestationRequestException("bad address");
         }
 
-        if (!request.getIdentifier().matches("https://twitter.com/(\\w+)")) {
-            throw new IllegalAttestationRequestException("identifier should match the format: https://twitter.com/name.");
+        List<AuthenticationService> authenticationServices = pluginService.getExtensions(AuthenticationService.class);
+        if (authenticationServices.isEmpty()) {
+            throw new IllegalAttestationRequestException("no plugins found");
         }
 
-        if (!this.authenticationService.verify(accessToken, request.getId())) {
+        String paProvider;
+        try {
+            String domain = new URL(request.getIdentifier().split("\\s+")[0]).getHost();
+            // twitter.com --> twitter, www.facebook.com --> facebook
+            String[] domainSplit = domain.split("\\.");
+            paProvider = domainSplit[domainSplit.length - 2];
+        } catch (MalformedURLException e) {
+            throw new IllegalAttestationRequestException("invalid identifier format");
+        }
+
+        // fallback to auth0 for backward compatibility
+        final String idProvider = Objects.requireNonNullElse(headers.get("x-pap-id-provider"), "auth0");
+
+        AuthenticationService authenticationService = authenticationServices.stream()
+                .filter(service -> service.idProvider().equals(idProvider))
+                .findFirst()
+                .orElseThrow(() -> new IllegalAttestationRequestException("unsupported idProvider: " + idProvider));
+
+        LOGGER.debug("AuthenticationService in use: {}, matched idProvider {} to verify paProvider {}"
+                , authenticationService.getClass().getName(), idProvider, paProvider);
+
+        Map<String, List<String>> filteredHeaders = headers.asMap()
+                .entrySet()
+                .stream()
+                .map(map -> {
+                    // backward compatibility for old request use x-ac header
+                    if ("x-ac".equalsIgnoreCase(map.getKey())) {
+                        return Map.entry("x-pap-ac", map.getValue());
+                    } else {
+                        return map;
+                    }
+                })
+                .filter(map -> map.getKey().toLowerCase().startsWith("x-pap"))
+                .collect(Collectors.toMap(map -> map.getKey().toLowerCase(), Map.Entry::getValue));
+
+        if (!authenticationService.verify(filteredHeaders, paProvider, request.getId())) {
             throw new IllegalAttestationRequestException("identifier could not be verified.");
         }
 
@@ -158,6 +203,25 @@ public class ApiController {
                 , request.getPublicAttestation(), request.getSignature()));
     }
 
+    @Get("/health")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Map<String, ?> health() {
+        List<PluginWrapper> plugins = pluginService.getPlugins();
+        List<AuthenticationService> authenticationServices = pluginService.getExtensions(AuthenticationService.class);
+        return Map.of(
+                "plugins", plugins.stream()
+                        .map(plugin -> Map.of(
+                                "id", plugin.getPluginId()
+                                , "version", plugin.getDescriptor().getVersion()))
+                        .collect(Collectors.toList())
+                , "AuthenticationService", authenticationServices.stream()
+                        .map(service -> Map.of(
+                                "idProvider", service.idProvider()
+                                , "class", service.getClass().getName()))
+                        .collect(Collectors.toList())
+        );
+    }
+
     private Eip712AttestationRequest createAttestRequest(AttestationWebRequest request) {
         Eip712AttestationRequest attestationRequest;
         try {
@@ -177,11 +241,12 @@ public class ApiController {
             throw new NoRecapthaResponseException("Missing client recaptcha response.");
         }
 
-        Map result = recaptchaService.verify(recaptchaKey, recaptchaResponse).blockingGet();
+        Map<String, ?> result = Mono.from(recaptchaService.verify(recaptchaKey, recaptchaResponse)).block();
         if (result != null && (Boolean) result.get("success")) {
             LOGGER.info("***** reCaptcha verified successfully *****");
             return true;
         } else {
+            @SuppressWarnings("unchecked")
             String errorCodes = String.join(",", ((List<String>) result.get("error-codes")));
             LOGGER.error("Recaptcha verify failed, caused by: {}",
                     errorCodes);
@@ -214,4 +279,5 @@ public class ApiController {
         byte[] commitment = AttestationCrypto.makeCommitment(email, AttestationType.EMAIL, secret);
         return !Arrays.equals(commitment, ticket.getCommitment());
     }
+
 }

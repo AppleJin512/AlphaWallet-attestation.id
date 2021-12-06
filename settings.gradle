@@ -1,1 +1,1 @@
-include ':backend'
+include 'backend', 'plugins:api', 'plugins:plugin-starter', 'plugins:auth0-plugin'

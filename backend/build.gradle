@@ -1,7 +1,7 @@
 plugins {
-    id('com.github.johnrengelman.shadow') version '6.1.0'
-    id('io.micronaut.application') version '1.2.0'
-    id 'groovy'
+    id('groovy')
+    id('com.github.johnrengelman.shadow') version '7.1.0'
+    id('io.micronaut.application') version '3.0.0'
 }
 
 version = '0.1'
@@ -21,24 +21,29 @@ micronaut {
 }
 
 dependencies {
+    annotationProcessor('io.micronaut:micronaut-http-validation')
+    compileOnly('com.google.code.findbugs:jsr305')
+    implementation(project(':plugins:api'))
     implementation('io.micronaut:micronaut-validation')
     implementation('io.micronaut:micronaut-runtime')
     implementation('io.micronaut:micronaut-http-client')
-    implementation('io.micronaut:micronaut-http-server-netty')
+    implementation('io.micronaut.reactor:micronaut-reactor')
+    implementation('javax.annotation:javax.annotation-api')
     implementation('com.sendgrid:sendgrid-java:4.7.1')
     implementation('software.amazon.awssdk:ses:2.13.39')
-    implementation('com.auth0:auth0:1.33.0')
     implementation('org.web3j:core:4.8.4')
     implementation('org.apache.logging.log4j:log4j-to-slf4j:2.14.1')
     implementation('org.tokenscript:attestation:0.3.7') {
         exclude group: 'org.apache.logging.log4j'
     }
     runtimeOnly('ch.qos.logback:logback-classic')
-    runtimeOnly('org.codehaus.janino:janino:3.1.6')
     runtimeOnly('ch.qos.logback.contrib:logback-json-classic:0.1.5')
     runtimeOnly('ch.qos.logback.contrib:logback-jackson:0.1.5')
-    runtimeOnly('com.google.code.gson:gson:2.8.5')
     runtimeOnly('ca.pjer:logback-awslogs-appender:1.6.0')
+
+    // Load MockAuthenticationService in test
+    testImplementation(project(':plugins:api'))
+    testAnnotationProcessor(project(':plugins:api'))
 }
 
 task prepareKotlinBuildScriptModel {

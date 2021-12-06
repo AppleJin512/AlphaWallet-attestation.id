@@ -1,12 +1,5 @@
 package id.attestation.utils;
 
-import org.tokenscript.attestation.IdentifierAttestation;
-import org.tokenscript.attestation.SignedIdentifierAttestation;
-import org.tokenscript.attestation.core.ASNEncodable;
-import org.tokenscript.attestation.core.AttestationCrypto;
-import org.tokenscript.attestation.core.SignatureUtility;
-import org.tokenscript.attestation.eip712.Eip712AttestationRequest;
-import org.tokenscript.attestation.ERC721Token;
 import id.attestation.data.AttestationWebResponse;
 import id.attestation.data.PublicAttestationWebResponse;
 import id.attestation.exception.EncryptOtpFailedException;
@@ -14,11 +7,6 @@ import id.attestation.exception.IllegalAttestationRequestException;
 import id.attestation.exception.PublicKeyCreationException;
 import io.alchemynft.attestation.NFTAttestation;
 import io.alchemynft.attestation.SignedNFTAttestation;
-
-import java.security.NoSuchAlgorithmException;
-import java.security.interfaces.ECPublicKey;
-import java.security.spec.InvalidKeySpecException;
-
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -34,6 +22,13 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.encoders.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.tokenscript.attestation.ERC721Token;
+import org.tokenscript.attestation.IdentifierAttestation;
+import org.tokenscript.attestation.SignedIdentifierAttestation;
+import org.tokenscript.attestation.core.ASNEncodable;
+import org.tokenscript.attestation.core.AttestationCrypto;
+import org.tokenscript.attestation.core.SignatureUtility;
+import org.tokenscript.attestation.eip712.Eip712AttestationRequest;
 import org.twittertip.CoSignedIdentifierAttestation;
 import org.web3j.crypto.Keys;
 import org.web3j.crypto.Sign;
@@ -46,10 +41,9 @@ import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.security.KeyFactory;
-import java.security.PublicKey;
-import java.security.SecureRandom;
-import java.security.SignatureException;
+import java.security.*;
+import java.security.interfaces.ECPublicKey;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.Clock;
@@ -147,12 +141,12 @@ public class CryptoUtils {
         }
     }
 
-    public static PublicAttestationWebResponse constructPublicAttest(long id, String identifier
+    public static PublicAttestationWebResponse constructPublicAttest(String id, String identifier
             , String message, String signature, String ethAddress
             , AsymmetricCipherKeyPair attestorKeys) {
         try {
             AsymmetricKeyParameter publicKey = getECCPublicKey(message, signature, ethAddress);
-            IdentifierAttestation att = new IdentifierAttestation(String.valueOf(id), identifier, publicKey);
+            IdentifierAttestation att = new IdentifierAttestation(id, identifier, publicKey);
             SignedIdentifierAttestation signed = new SignedIdentifierAttestation(att, attestorKeys);
             return new PublicAttestationWebResponse(derString(signed), encodePublicKey(attestorKeys.getPublic()), encodePublicKey(publicKey));
         } catch (SignatureException e) {

@@ -1,0 +1,26 @@
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '7.1.0'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly project(':plugins:api')
+    annotationProcessor project(':plugins:api')
+}
+
+jar.manifest {
+    attributes(
+            'Plugin-Class': project.pluginClass,
+            'Plugin-Id': project.pluginId,
+            'Plugin-Version': project.version,
+            'Plugin-Description': project.hasProperty('pluginDescription') ? project.pluginDescription : ''
+    )
+}
+
+shadowJar {
+    archiveClassifier.set('')
+}

@@ -28,7 +28,6 @@ npm-debug.log*
 /dist
 node_modules
 /platforms
-/plugins
 /www
 www.zip
 reports
@@ -38,10 +37,10 @@ videos
 *.map
 /**/.sass-cache
 /reports
-/frontend/public/build
+build
 /frontend/reports
 .*
 !.github
 !.babelrc
 !.gitignore
-
+bin

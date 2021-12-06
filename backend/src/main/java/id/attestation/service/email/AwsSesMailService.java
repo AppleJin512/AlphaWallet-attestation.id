@@ -1,17 +1,15 @@
 package id.attestation.service.email;
 
-import edu.umd.cs.findbugs.annotations.Nullable;
 import io.micronaut.context.annotation.Requires;
 import io.micronaut.context.annotation.Secondary;
 import io.micronaut.context.annotation.Value;
+import io.micronaut.core.annotation.Nullable;
+import jakarta.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.ses.SesClient;
 import software.amazon.awssdk.services.ses.model.*;
-
-import javax.inject.Singleton;
-
 
 @Singleton
 @Requires(condition = AwsResourceAccessCondition.class)

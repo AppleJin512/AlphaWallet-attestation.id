@@ -4,7 +4,7 @@ import io.micronaut.http.MediaType;
 import io.micronaut.http.annotation.Post;
 import io.micronaut.http.annotation.Produces;
 import io.micronaut.http.client.annotation.Client;
-import io.reactivex.Single;
+import org.reactivestreams.Publisher;
 
 import java.util.Map;
 
@@ -15,6 +15,6 @@ public interface RecaptchaService {
 
     @Produces({MediaType.APPLICATION_FORM_URLENCODED})
     @Post
-    Single<Map> verify(String secret, String response);
+    Publisher<Map<String, ?>> verify(String secret, String response);
 
 }
