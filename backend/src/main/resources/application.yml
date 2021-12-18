@@ -4,3 +4,10 @@ micronaut:
   server:
     cors:
       enabled: true
+  metrics:
+    enabled: true
+    export:
+      cloudwatch:
+        enabled: false
+        namespace: APP/attestation-backend
+        batchSize: 10

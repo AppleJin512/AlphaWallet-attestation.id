@@ -1,5 +1,8 @@
 package id.attestation.data;
 
+import io.micronaut.core.annotation.Introspected;
+
+@Introspected
 public class OtpResponse {
     private String otpEncrypted;
 
