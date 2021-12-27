@@ -9,3 +9,8 @@ repositories {
 dependencies {
     api "org.pf4j:pf4j:${pf4jVersion}"
 }
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}

@@ -113,7 +113,8 @@ curl -X POST -H 'Content-Type: application/json' -i http://localhost:8080/api/at
     - ethAddress: address for signing this message
     - identifier: full twitter identifier, eg: https://twitter.com/foxgem
   - headers content:
-    - x-ac: access token of this identifier from auth0
+    - x-ac: access token of this identifier
+    - x-pap-id-provider: id provider of this identifier. E.g: `auth0`, `firebase`, and so on.
 - response: json format
   - attestation: attestation value, BASE64-Encoded string
   - attestorPublicKey: public key of the attestor, BASE64-Encoded string

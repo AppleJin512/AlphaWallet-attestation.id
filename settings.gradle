@@ -1,1 +1,1 @@
-include 'backend', 'plugins:api', 'plugins:plugin-starter', 'plugins:auth0-plugin'
+include 'backend', 'plugins:api', 'plugins:plugin-starter', 'plugins:auth0-plugin', 'plugins:firebase-plugin'

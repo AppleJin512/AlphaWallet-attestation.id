@@ -1,0 +1,30 @@
+plugins {
+    id 'java'
+    id 'com.github.johnrengelman.shadow' version '7.1.0'
+}
+
+repositories {
+    mavenCentral()
+    google()
+}
+
+dependencies {
+    compileOnly project(':plugins:api')
+    annotationProcessor project(':plugins:api')
+    implementation('com.google.firebase:firebase-admin:8.1.0') {
+        exclude group: 'org.slf4j'
+    }
+}
+
+jar.manifest {
+    attributes(
+            'Plugin-Class': project.pluginClass,
+            'Plugin-Id': project.pluginId,
+            'Plugin-Version': project.version,
+            'Plugin-Description': project.hasProperty('pluginDescription') ? project.pluginDescription : ''
+    )
+}
+
+shadowJar {
+    archiveClassifier.set('')
+}

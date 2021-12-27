@@ -205,7 +205,7 @@ public class ApiController {
 
     @Get("/health")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Map<String, ?> health() {
+    public Map<String, List<Object>> health() {
         List<PluginWrapper> plugins = pluginService.getPlugins();
         List<AuthenticationService> authenticationServices = pluginService.getExtensions(AuthenticationService.class);
         return Map.of(
