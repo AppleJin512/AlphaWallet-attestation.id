@@ -226,7 +226,7 @@ public class ApiController {
         Eip712AttestationRequest attestationRequest;
         try {
             attestationRequest = new Eip712AttestationRequest(ATTESTOR_DOMAIN, request.getPublicRequest());
-            if (!attestationRequest.checkValidity()) {
+            if (!attestationRequest.checkValidity() || !attestationRequest.verify()) {
                 throw new RuntimeException("Could not validate attestation signing request");
             }
             return attestationRequest;
@@ -241,16 +241,22 @@ public class ApiController {
             throw new NoRecapthaResponseException("Missing client recaptcha response.");
         }
 
-        Map<String, ?> result = Mono.from(recaptchaService.verify(recaptchaKey, recaptchaResponse)).block();
-        if (result != null && (Boolean) result.get("success")) {
-            LOGGER.info("***** reCaptcha verified successfully *****");
-            return true;
-        } else {
-            @SuppressWarnings("unchecked")
-            String errorCodes = String.join(",", ((List<String>) result.get("error-codes")));
-            LOGGER.error("Recaptcha verify failed, caused by: {}",
+        try {
+            Map<String, ?> result = Mono.from(recaptchaService.verify(recaptchaKey, recaptchaResponse)).block();
+            if (result != null && (Boolean) result.get("success")) {
+                LOGGER.info("***** reCaptcha verified successfully *****");
+                return true;
+            } else {
+                @SuppressWarnings("unchecked")
+                String errorCodes = String.join(",", ((List<String>) result.get("error-codes")));
+                LOGGER.error("Recaptcha verify failed, caused by: {}",
                     errorCodes);
-            throw new RecaptchaVerifyFailedException("Recaptcha verify failed, cause:" + errorCodes);
+                throw new RecaptchaVerifyFailedException(
+                    "Recaptcha verify failed, cause:" + errorCodes);
+            }
+        } catch (NullPointerException e) {
+            throw new RecaptchaVerifyFailedException(
+                "Recaptcha verify failed: Could not retrieve recaptcha result");
         }
     }
 
@@ -268,7 +274,11 @@ public class ApiController {
             ticketDecoder = new TicketDecoder(CryptoUtils.getECPublicKeyParameters(devconPubkeyHex));
         }
         try {
-            return ticketDecoder.decode(URLUtility.decodeData(encodedTicket));
+            Ticket ticket =  ticketDecoder.decode(URLUtility.decodeData(encodedTicket));
+            if (!ticket.verify() || !ticket.checkValidity()) {
+                throw new IllegalAttestationRequestException("Could decode a valid or verifiable ticket");
+            }
+            return ticket;
         } catch (IOException e) {
             LOGGER.error("failed to decode the ticket, caused by: {}", e.getMessage());
             throw new IllegalAttestationRequestException("failed to decode ticket, cause: " + e.getMessage());
