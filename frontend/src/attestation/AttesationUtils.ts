@@ -160,7 +160,8 @@ export async function createAttestationRquestAndSecret(
 
 function currentTimestampString() {
   const timestamp = new Date();
-  return timestamp.toUTCString();
+  // return example: Sat Jan 29 2022 12:55:37 GMT+0800
+  return timestamp.toString().replace(/\s*\(.+\)/, "");
 }
 
 export function parseAttestation(attestation: string) {
