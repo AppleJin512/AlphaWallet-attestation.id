@@ -85,9 +85,9 @@ jobs:
     runs-on: ubuntu-latest
     # Only push to stage, hotfix, or main will trigger deployment
     if: github.event_name == 'push' && (
-      github.ref == 'refs/heads/main' ||
       github.ref == 'refs/heads/stage' ||
-      github.ref == 'refs/heads/hotfix'
+      github.ref == 'refs/heads/hotfix' ||
+      github.ref == 'refs/heads/prod'
       )
     steps:
       - uses: actions/download-artifact@v2
