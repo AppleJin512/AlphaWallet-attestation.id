@@ -54,3 +54,7 @@ export function saveAttestation(attestation: {
 export function clearAttestation() {
   localStorage.removeItem(STORAGE_KEY_ATTESTATION);
 }
+
+export function clearAll() {
+  localStorage.clear();
+}

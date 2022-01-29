@@ -159,8 +159,8 @@ export async function createAttestationRquestAndSecret(
 }
 
 function currentTimestampString() {
-  const timestamp = new Date().toString();
-  return timestamp.substr(0, timestamp.indexOf("(") - 1);
+  const timestamp = new Date();
+  return timestamp.toUTCString();
 }
 
 export function parseAttestation(attestation: string) {

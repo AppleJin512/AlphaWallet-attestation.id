@@ -1,18 +1,22 @@
 <script lang="ts">
-  import { onMount, onDestroy } from "svelte";
-  import FlowStatus from "./component/FlowStatus.svelte";
-  import CurrentStep from "./component/CurrentStep.svelte";
-  import * as walletService from "./common/WalletService";
-  import { createAndReturnAttestationFromMagicLink, setMagicLinkData } from "./common/MagicLink";
-  import * as flow from "./common/Flow";
-  import { current } from "./common/Flow";
-  import {bigintToHex, hexToBigint} from "bigint-conversion";
-  import {createAttestationRquestAndSecret, parseAttestation} from "./attestation/AttesationUtils";
-  import {clearAttestation, getRawAttestation, getRawCurrentAccount, saveAttestation} from "./common/AppState";
-
+  import { hexToBigint } from "bigint-conversion";
+  import { onDestroy, onMount } from "svelte";
+  import { parseAttestation } from "./attestation/AttesationUtils";
   import {
-    STEP_CONNECT_WALLET
-  } from "./common/Flow";
+    clearAll,
+    clearAttestation,
+    getRawAttestation,
+    getRawCurrentAccount,
+  } from "./common/AppState";
+  import * as flow from "./common/Flow";
+  import { current, STEP_CONNECT_WALLET } from "./common/Flow";
+  import {
+    createAndReturnAttestationFromMagicLink,
+    setMagicLinkData,
+  } from "./common/MagicLink";
+  import * as walletService from "./common/WalletService";
+  import CurrentStep from "./component/CurrentStep.svelte";
+  import FlowStatus from "./component/FlowStatus.svelte";
 
   flow.loadCurrentStep();
 
@@ -59,6 +63,8 @@
         "message",
         (event) => {
           if (event.data.force) {
+            // force clear localstorage when calling from iframe
+            clearAll();
             current.set(flow.start);
             reply({
               display: true,
@@ -78,9 +84,8 @@
 
   const tryToReturnAttestation = async function (data) {
     if (!attestation || attestationExpired) {
-      console.log('!attestation || attestationExpired');
+      console.log("!attestation || attestationExpired");
       if (data.magicLink && data.email) {
-
         setMagicLinkData(data.email, data.magicLink);
 
         let rawCurrentAccount = getRawCurrentAccount();
@@ -95,8 +100,6 @@
             display: true,
           });
         }
-
-
       } else {
         reply({
           display: true,

@@ -86,7 +86,7 @@ export async function signatureAndPublicKey(userData) {
     )
   );
 
-  const publicKey = await ethers.utils.recoverPublicKey(digest, signature);
+  const publicKey = ethers.utils.recoverPublicKey(digest, signature);
   console.log(ethers.utils.computeAddress(publicKey));
   console.log(
     ethers.utils.verifyTypedData(
