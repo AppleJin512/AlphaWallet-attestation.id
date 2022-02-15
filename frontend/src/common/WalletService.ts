@@ -36,10 +36,14 @@ export async function isEnabled() {
 }
 
 export async function connect(nextStep = "email") {
-  const web3ModalProvider = await web3Modal.connect();
-  provider = new ethers.providers.Web3Provider(web3ModalProvider);
-  registerEthListener(web3ModalProvider);
-  updateCurrentStatus(await provider.listAccounts(), nextStep);
+  try {
+    const web3ModalProvider = await web3Modal.connect();
+    provider = new ethers.providers.Web3Provider(web3ModalProvider);
+    registerEthListener(web3ModalProvider);
+    updateCurrentStatus(await provider.listAccounts(), nextStep);
+  } catch (err) {
+    console.log(err);
+  }
 }
 
 export async function signatureAndPublicKey(userData) {

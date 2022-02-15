@@ -1,15 +1,15 @@
-import commonjs from '@rollup/plugin-commonjs';
-import json from '@rollup/plugin-json';
-import resolve from '@rollup/plugin-node-resolve';
-import replace from '@rollup/plugin-replace';
-import typescript from '@rollup/plugin-typescript';
-import { config } from 'dotenv';
-import css from 'rollup-plugin-css-only';
-import livereload from 'rollup-plugin-livereload';
-import nodePolyfills from 'rollup-plugin-node-polyfills';
-import svelte from 'rollup-plugin-svelte';
-import { terser } from 'rollup-plugin-terser';
-import sveltePreprocess from 'svelte-preprocess';
+import commonjs from "@rollup/plugin-commonjs";
+import json from "@rollup/plugin-json";
+import resolve from "@rollup/plugin-node-resolve";
+import replace from "@rollup/plugin-replace";
+import typescript from "@rollup/plugin-typescript";
+import { config } from "dotenv";
+import css from "rollup-plugin-css-only";
+import livereload from "rollup-plugin-livereload";
+import nodePolyfills from "rollup-plugin-node-polyfills";
+import svelte from "rollup-plugin-svelte";
+import { terser } from "rollup-plugin-terser";
+import sveltePreprocess from "svelte-preprocess";
 
 const production = !process.env.ROLLUP_WATCH;
 
@@ -23,46 +23,50 @@ function serve() {
   return {
     writeBundle() {
       if (server) return;
-      server = require('child_process').spawn('npm', ['run', 'start', '--', '--dev'], {
-        stdio: ['ignore', 'inherit', 'inherit'],
-        shell: true
-      });
+      server = require("child_process").spawn(
+        "npm",
+        ["run", "start", "--", "--dev"],
+        {
+          stdio: ["ignore", "inherit", "inherit"],
+          shell: true,
+        }
+      );
 
-      process.on('SIGTERM', toExit);
-      process.on('exit', toExit);
-    }
+      process.on("SIGTERM", toExit);
+      process.on("exit", toExit);
+    },
   };
 }
 
 export default {
-  input: 'src/main.ts',
+  input: "src/main.ts",
   output: {
     sourcemap: !production,
-    format: 'iife',
-    name: 'app',
-    file: 'public/build/bundle.js'
+    format: "iife",
+    name: "app",
+    file: "public/build/bundle.js",
   },
   plugins: [
     replace({
-      // stringify the object       
+      // stringify the object
       __myapp: JSON.stringify({
         env: {
           isProd: production,
-          ...config().parsed // attached the .env config
-        }
+          ...config().parsed, // attached the .env config
+        },
       }),
     }),
     svelte({
       preprocess: sveltePreprocess(),
       compilerOptions: {
         // enable run-time checks when not in production
-        dev: !production
-      }
+        dev: !production,
+      },
     }),
     json(),
     // we'll extract any component CSS out into
     // a separate file - better for performance
-    css({ output: 'bundle.css' }),
+    css({ output: "bundle.css" }),
 
     // If you have external dependencies installed from
     // npm, you'll most likely need these plugins. In
@@ -72,13 +76,13 @@ export default {
     resolve({
       browser: true,
       preferBuiltins: true,
-      dedupe: ['svelte']
+      dedupe: ["svelte"],
     }),
-    commonjs(),
+    commonjs({ transformMixedEsModules: true }),
     nodePolyfills(),
     typescript({
       sourceMap: !production,
-      inlineSources: !production
+      inlineSources: !production,
     }),
 
     // In dev mode, call `npm run start` once
@@ -87,13 +91,13 @@ export default {
 
     // Watch the `public` directory and refresh the
     // browser on changes when not in production
-    !production && livereload('public'),
+    !production && livereload("public"),
 
     // If we're building for production (npm run build
     // instead of npm run dev), minify
-    production && terser()
+    production && terser(),
   ],
   watch: {
-    clearScreen: false
-  }
+    clearScreen: false,
+  },
 };
