@@ -13,7 +13,10 @@
     getRawCurrentAccount,
   } from "../common/AppState";
 
-  import { createAndReturnAttestationFromMagicLink, hasMagicLink } from "../common/MagicLink";
+  import {
+    createAndReturnAttestationFromMagicLink,
+    hasMagicLink,
+  } from "../common/MagicLink";
 
   let disabled = true;
   let isLoading = false;
@@ -62,11 +65,9 @@
         }
       })
       .catch((error) => {
-              console.log(error);
-              isLoading = false;
-            });
-
-
+        console.log(error);
+        isLoading = false;
+      });
   };
 
   const resend = function () {
@@ -136,14 +137,19 @@
     } else {
       document.getElementById("code0").focus();
       if (getRawPair()) {
-        otpCode = await cryptoUtils.decrypt(getRawPair().privateKey, getRawOTP());
+        otpCode = await cryptoUtils.decrypt(
+          getRawPair().privateKey,
+          getRawOTP()
+        );
         console.log(otpCode);
-        email = await cryptoUtils.decrypt(getRawPair().privateKey, getRawEmail());
+        email = await cryptoUtils.decrypt(
+          getRawPair().privateKey,
+          getRawEmail()
+        );
       } else {
-        console.log('key pair missed...');
+        console.log("key pair missed...");
       }
-        document.addEventListener("paste", pasteListener);
-
+      document.addEventListener("paste", pasteListener);
     }
   });
 
@@ -172,6 +178,7 @@
     }
   }
 </script>
+
 {#if hasMagicLink()}
   <div class="title">Creating Attestation</div>
 {:else}
@@ -187,11 +194,12 @@
   <div class="input-div">
     {#each codes as code, i}
       <input
-              bind:value={code}
-              id={`code${i}`}
-              maxlength="1"
-              on:keyup={(event) => changeHandler(event, i)}
-              class={i + 1 === OTP_SIZE ? "no-margin" : ""}
+        autocomplete="off"
+        bind:value={code}
+        id={`code${i}`}
+        maxlength="1"
+        on:keyup={(event) => changeHandler(event, i)}
+        class={i + 1 === OTP_SIZE ? "no-margin" : ""}
       />
     {/each}
 
@@ -210,8 +218,6 @@
     <span on:click={resend} href="" class="resend"> or resend now.</span>
   </div>
 {/if}
-
-
 
 <style>
   input {
