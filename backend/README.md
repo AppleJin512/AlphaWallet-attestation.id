@@ -24,6 +24,25 @@ Available subcommands:
 Start server: java -jar backend-<version>-all.jar
 ```
 
+Enable OpenAPI:
+
+```sh
+# You should set micronaut environment to openapi
+# You can do this by setting system property micronaut.environments
+# or environment variable MICRONAUT_ENVIRONMENTS
+
+# E.g:
+MICRONAUT_ENVIRONMENTS=openapi ./gradlew run
+
+# or
+java -Dmicronaut.environments=openapi -jar backend-<version>-all.jar
+
+# WebUI can be found in
+# http://localhost:8080/swagger-ui/
+# http://localhost:8080/redoc/
+# http://localhost:8080/rapidoc/
+```
+
 ## Restful API
 
 ### Get an OTP

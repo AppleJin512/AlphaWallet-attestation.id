@@ -14,6 +14,7 @@ import id.attestation.utils.CryptoUtils;
 import id.attestation.utils.IdentifierExtractor;
 import id.attestation.utils.MagicLinkParser;
 import io.micronaut.context.annotation.Value;
+import io.micronaut.core.annotation.Nullable;
 import io.micronaut.core.util.StringUtils;
 import io.micronaut.http.HttpHeaders;
 import io.micronaut.http.HttpResponse;
@@ -94,6 +95,10 @@ public class ApiController {
         return HttpResponse.created(response);
     }
 
+    /**
+     * @param request AttestationWebRequest
+     * @return AttestationWebResponse
+     */
     @Post("/attestation/")
     @ExecuteOn(TaskExecutors.IO)
     public HttpResponse<AttestationWebResponse> createAttestation(@Body @Valid AttestationWebRequest request) {
