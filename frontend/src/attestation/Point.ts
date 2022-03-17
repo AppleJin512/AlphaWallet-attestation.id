@@ -1,6 +1,6 @@
 import { bigintToBuf } from "bigint-conversion";
 
-import { BnPowMod, uint8merge } from "../common/Utils";
+import { BnPowMod, uint8merge, bnToBuf } from "../common/Utils";
 
 // curve SECP256k1
 export let CURVE_SECP256k1 = {
@@ -92,7 +92,7 @@ export class Point {
       return new Uint8Array(0);
     }
 
-    let X = new Uint8Array(bigintToBuf(this.x));
+    let X = bnToBuf(this.x,32);
     if (compressed) {
       return uint8merge([Uint8Array.from([2]), X]);
     }
@@ -100,7 +100,7 @@ export class Point {
     return uint8merge([
       Uint8Array.from([4]),
       X,
-      new Uint8Array(bigintToBuf(this.y)),
+      bnToBuf(this.y, 32),
     ]);
   }
 
