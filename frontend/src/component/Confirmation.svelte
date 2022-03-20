@@ -170,6 +170,14 @@
     }
   }
 
+  function isMobileChrome() {
+    const ua = navigator.userAgent;
+    if (/Android/.test(ua)) {
+      return true;
+    }
+    return false;
+  }
+
   $: {
     for (const i in codes) {
       if (!/\d/.test(codes[i])) {
@@ -193,14 +201,28 @@
 
   <div class="input-div">
     {#each codes as code, i}
-      <input
-        autocomplete="off"
-        bind:value={code}
-        id={`code${i}`}
-        maxlength="1"
-        on:keyup={(event) => changeHandler(event, i)}
-        class={i + 1 === OTP_SIZE ? "no-margin" : ""}
-      />
+      {#if !isMobileChrome()}
+        <input
+          type="value"
+          autocomplete="off"
+          inputmode="numeric"
+          bind:value={code}
+          id={`code${i}`}
+          maxlength="1"
+          on:keyup={(event) => changeHandler(event, i)}
+          class={i + 1 === OTP_SIZE ? "no-margin" : ""}
+        />
+      {:else}
+        <input
+          type="value"
+          autocomplete="off"
+          inputmode="numeric"
+          bind:value={code}
+          id={`code${i}`}
+          maxlength="1"
+          class={i + 1 === OTP_SIZE ? "no-margin" : ""}
+        />
+      {/if}
     {/each}
 
     <button on:click={submit} {disabled}>
