@@ -220,6 +220,15 @@
           bind:value={code}
           id={`code${i}`}
           maxlength="1"
+          on:input={(event) => {
+            codes[i] = event.data;
+            if (event.inputType === "insertText") {
+              focusNext(event);
+            } else if (event.inputType === "deleteContentBackward") {
+              focusPrevious(event);
+            }
+            tryToEnableComfirmButton();
+          }}
           class={i + 1 === OTP_SIZE ? "no-margin" : ""}
         />
       {/if}
