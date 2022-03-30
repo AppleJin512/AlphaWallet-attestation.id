@@ -119,8 +119,14 @@ export class ValidityValue {
   @AsnProp({ type: Time })
   notBefore: Time;
 
+  @AsnProp({ type: AsnPropTypes.Integer, optional: true })
+  notBeforeInt?: number;
+
   @AsnProp({ type: Time })
   notAfter: Time;
+
+  @AsnProp({ type: AsnPropTypes.Integer, optional: true })
+  notAfterInt?: number;
 }
 
 @AsnType({ type: AsnTypeTypes.Choice })
