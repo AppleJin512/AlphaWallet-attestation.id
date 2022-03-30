@@ -2,7 +2,7 @@ plugins {
     id('groovy')
     id('com.github.johnrengelman.shadow') version '7.1.1'
     id('io.micronaut.application') version '3.2.1'
-    id "org.sonarqube" version "3.0"
+    id 'org.sonarqube' version '3.0'
 }
 
 version = '0.1'
@@ -22,7 +22,7 @@ micronaut {
 }
 
 dependencies {
-    annotationProcessor("io.micronaut.openapi:micronaut-openapi")
+    annotationProcessor('io.micronaut.openapi:micronaut-openapi')
     annotationProcessor('io.micronaut:micronaut-http-validation')
     compileOnly('com.google.code.findbugs:jsr305')
     implementation(project(':plugins:api'))
@@ -36,7 +36,7 @@ dependencies {
     implementation('org.web3j:core:4.8.4')
     implementation('org.apache.logging.log4j:log4j-to-slf4j:2.17.1')
     implementation('io.micronaut.micrometer:micronaut-micrometer-registry-cloudwatch')
-    implementation('org.tokenscript:attestation:0.3.11') {
+    implementation('org.tokenscript:attestation:0.3.15') {
         exclude group: 'org.apache.logging.log4j'
     }
     runtimeOnly('ch.qos.logback:logback-classic')
@@ -69,4 +69,4 @@ java {
     targetCompatibility = JavaVersion.VERSION_11
 }
 
-project.tasks["sonarqube"].dependsOn "test"
+project.tasks['sonarqube'].dependsOn 'test'
