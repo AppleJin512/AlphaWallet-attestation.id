@@ -11,7 +11,7 @@ declare let window: any;
 
 const curveOrderBitLength = 254;
 const ATTESTOR_DOMAIN = "http://wwww.attestation.id";
-const Eip712UserDataDescription = "Linking Ethereum address to phone or email";
+const Eip712UserDataDescription = "Creating email attestation";
 
 export const G = new Point(
   21282764439311451829394129092047993080259557426320933158672611067687630484067n,
