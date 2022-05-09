@@ -1,4 +1,4 @@
-import { createAttestationRquestAndSecret } from "../attestation/AttesationUtils";
+import { createAttestationRequestAndSecret } from "../attestation/AttesationUtils";
 import { getRawCurrentAccount, saveAttestation } from "./AppState";
 import { bigintToHex } from "bigint-conversion";
 
@@ -22,7 +22,7 @@ export async function createAndReturnAttestationFromMagicLink() {
 
   let requestAndSecret: any;
   try {
-    requestAndSecret = await createAttestationRquestAndSecret(
+    requestAndSecret = await createAttestationRequestAndSecret(
       "mail",
       magicLinkEmail,
       getRawCurrentAccount()

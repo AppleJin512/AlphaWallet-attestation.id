@@ -116,7 +116,7 @@
 
   function expired(attestation) {
     return (
-      attestation.signedInfo.validity.value.notAfter.generalizedTime.getTime() <
+      attestation.signedInfo.validity.notAfter.generalizedTime.getTime() <
       new Date().getTime()
     );
   }

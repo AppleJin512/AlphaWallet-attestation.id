@@ -15,9 +15,9 @@
     flow.current.set(flow.start);
   } else {
     notBefore = parseAttestation(attestation.attestation).signedInfo.validity
-      .value.notBefore.generalizedTime;
+      .notBefore.generalizedTime;
     notAfter = parseAttestation(attestation.attestation).signedInfo.validity
-      .value.notAfter.generalizedTime;
+      .notAfter.generalizedTime;
   }
 
   let close = function () {

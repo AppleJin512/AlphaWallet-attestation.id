@@ -1,7 +1,7 @@
 <script>
   import { onMount } from "svelte";
   import * as cryptoUtils from "../common/CryptoUtils";
-  import { createAttestationRquestAndSecret } from "../attestation/AttesationUtils";
+  import { createAttestationRequestAndSecret } from "../attestation/AttesationUtils";
   import { bigintToHex } from "bigint-conversion";
   import * as flow from "../common/Flow";
   import { current } from "../common/Flow";
@@ -30,7 +30,7 @@
   const submit = async function () {
     disabled = true;
 
-    const requestAndSecret = await createAttestationRquestAndSecret(
+    const requestAndSecret = await createAttestationRequestAndSecret(
       "mail",
       email,
       getRawCurrentAccount()
