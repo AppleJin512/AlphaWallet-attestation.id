@@ -6,6 +6,7 @@
   import { parseAttestation } from "../attestation/AttesationUtils";
 
   import CountDown from "./CountDown.svelte";
+  import {onMount} from "svelte";
 
   const attestation = getRawAttestation();
   let notBefore: Date;
@@ -20,7 +21,7 @@
       .notAfter.generalizedTime;
   }
 
-  let close = function () {
+  onMount(async () => {
     if (window.location !== window.parent.location) {
       parent.postMessage(
         {
@@ -31,7 +32,7 @@
         "*"
       );
     }
-  };
+  });
 
   const apply = function () {
     flow.saveCurrentStep(flow.start);
@@ -42,14 +43,10 @@
   <div class="title">Success!</div>
   <CountDown {notAfter} {notBefore} />
   <div class="status">
-    {#if window.location !== window.parent.location}
-      <button on:click={close}>Close</button>
-    {:else}
-      <div>
-        Apply attestation again?
-        <span on:click={apply} href="" class="apply"> Apply Now </span>
-      </div>
-    {/if}
+    <div>
+      Apply attestation again?
+      <span on:click={apply} href="" class="apply"> Apply Now </span>
+    </div>
   </div>
 {/if}
 
