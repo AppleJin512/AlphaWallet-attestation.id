@@ -1,6 +1,6 @@
 package id.attestation;
 
-import id.attestation.service.PluginService;
+import id.attestation.service.plugin.PluginService;
 import id.attestation.utils.CryptoUtils;
 import io.micronaut.context.event.ApplicationEventListener;
 import io.micronaut.runtime.Micronaut;

@@ -9,12 +9,6 @@
 
   const steps = [
     {
-      id: STEP_CONNECT_WALLET,
-      text: "Connect",
-      verified: false,
-      active: false,
-    },
-    {
       id: STEP_ENTER_EMAIL,
       text: "Email",
       verified: false,
@@ -23,6 +17,12 @@
     {
       id: STEP_CONFIRMATION,
       text: "Confirm",
+      verified: false,
+      active: false,
+    },
+    {
+      id: STEP_CONNECT_WALLET,
+      text: "Connect",
       verified: false,
       active: false,
     },

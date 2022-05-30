@@ -28,7 +28,7 @@
 <div class="countdown">
   {#await emailPromise then email}
     <div class="header">
-      Attesation for <scan class="subject">{email}</scan>
+      Attestation for <scan class="subject">{email}</scan>
     </div>
   {/await}
   <div class="body">

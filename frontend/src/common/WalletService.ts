@@ -1,4 +1,3 @@
-import Torus from "@toruslabs/torus-embed";
 import WalletConnectProvider from "@walletconnect/web3-provider";
 import { ethers } from "ethers";
 import { _TypedDataEncoder } from "ethers/lib/utils";
@@ -6,7 +5,7 @@ import { keccak256 } from "js-sha3";
 import Web3Modal from "web3modal";
 
 import * as flow from "../common/Flow";
-import { saveCurrentAccount } from "./AppState";
+import { currentWallet, saveCurrentAccount } from "./AppState";
 import { current, saveCurrentStep } from "./Flow";
 
 let provider: ethers.providers.Web3Provider;
@@ -20,9 +19,6 @@ const providerOptions = {
       infuraId: "795587fc9545486b8a5e190a44e3ae7d",
     },
   },
-  torus: {
-    package: Torus,
-  },
 };
 
 const web3Modal = new Web3Modal({
@@ -31,16 +27,24 @@ const web3Modal = new Web3Modal({
   providerOptions,
 });
 
+if (!window.location.href.includes("access_token")) {
+  saveCurrentStep(flow.STEP_ENTER_EMAIL);
+  web3Modal.clearCachedProvider();
+  localStorage.removeItem("walletconnect");
+} else {
+  saveCurrentStep(flow.STEP_CONFIRMATION);
+}
+
 export async function isEnabled() {
   return web3Modal.cachedProvider;
 }
 
-export async function connect(nextStep = "email") {
+export async function connect() {
   try {
     const web3ModalProvider = await web3Modal.connect();
     provider = new ethers.providers.Web3Provider(web3ModalProvider);
     registerEthListener(web3ModalProvider);
-    updateCurrentStatus(await provider.listAccounts(), nextStep);
+    updateCurrentStatus(await provider.listAccounts());
   } catch (err) {
     console.log(err);
   }
@@ -48,7 +52,8 @@ export async function connect(nextStep = "email") {
 
 export async function signatureAndPublicKey(userData) {
   if (!provider) {
-    return {};
+    const web3ModalProvider = await web3Modal.connect();
+    provider = new ethers.providers.Web3Provider(web3ModalProvider);
   }
 
   const domain = {
@@ -116,12 +121,12 @@ export async function signatureAndPublicKey(userData) {
   return { request: JSON.stringify(externalAuthenticationData), publicKey };
 }
 
-function updateCurrentStatus(accounts, nextStep = "email") {
+function updateCurrentStatus(accounts) {
   if (accounts.length === 0) {
     console.log("no account");
   } else {
+    currentWallet.set(accounts[0]);
     saveCurrentAccount(accounts[0]);
-    saveCurrentStep(nextStep);
   }
 }
 
@@ -154,4 +159,5 @@ function registerEthListener(web3ModalProvider) {
 function reset() {
   current.set(flow.start);
   web3Modal.clearCachedProvider();
+  localStorage.removeItem("walletconnect");
 }

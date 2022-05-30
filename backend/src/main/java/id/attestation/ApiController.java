@@ -1,14 +1,17 @@
 package id.attestation;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import id.attestation.data.*;
 import id.attestation.exception.IllegalAttestationRequestException;
 import id.attestation.exception.NoRecapthaResponseException;
 import id.attestation.exception.RecaptchaVerifyFailedException;
-import id.attestation.service.PluginService;
 import id.attestation.service.auth.AuthenticationService;
 import id.attestation.service.email.EmailData;
 import id.attestation.service.email.EmailService;
 import id.attestation.service.email.EmailTemplate;
+import id.attestation.service.plugin.AuthenticationServiceManager;
+import id.attestation.service.plugin.PluginService;
 import id.attestation.service.recaptcha.RecaptchaService;
 import id.attestation.utils.CryptoUtils;
 import id.attestation.utils.IdentifierExtractor;
@@ -64,6 +67,9 @@ public class ApiController {
     private TicketDecoder ticketDecoder;
 
     @Inject
+    private AuthenticationServiceManager authenticationServiceManager;
+
+    @Inject
     private PluginService pluginService;
 
     public ApiController(@Value("${RECAPTCHA_KEY:none}") String recaptchaKey
@@ -101,7 +107,28 @@ public class ApiController {
      */
     @Post("/attestation/")
     @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<AttestationWebResponse> createAttestation(@Body @Valid AttestationWebRequest request) {
+    public HttpResponse<AttestationWebResponse> createAttestation(
+            @Body @Valid AttestationWebRequest request, HttpHeaders headers) {
+        final String idProvider = headers.get("x-pap-id-provider");
+        if (idProvider == null) {
+            throw new IllegalAttestationRequestException("Missing x-pap-id-provider in header");
+        }
+        AuthenticationService authenticationService = authenticationServiceManager.findByIdProvider(idProvider)
+                .orElseThrow(() -> new IllegalAttestationRequestException("unsupported idProvider: " + idProvider));
+        String email;
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            JsonNode publicRequestNode = mapper.readTree(request.getPublicRequest());
+            JsonNode jsonSignedNode = publicRequestNode.get("jsonSigned");
+            email = mapper.readTree(jsonSignedNode.textValue()).get("message").get("identifier").textValue();
+        } catch (Exception e) {
+            LOGGER.error("wrong publicRequest", e);
+            throw new IllegalAttestationRequestException("wrong publicRequest");
+        }
+        Map<String, List<String>> filteredHeaders = authenticationServiceManager.filterRequiredHeaders(headers);
+        if (!authenticationService.verifyEmail(filteredHeaders, email)) {
+            throw new IllegalAttestationRequestException("email could not be verified.");
+        }
         Eip712AttestationRequest attestationRequest = createAttestRequest(request);
         return HttpResponse.created(CryptoUtils.constructAttest(request.getValidity(), request.getAttestor(), attestationRequest, keys));
     }
@@ -131,11 +158,6 @@ public class ApiController {
             throw new IllegalAttestationRequestException("bad address");
         }
 
-        List<AuthenticationService> authenticationServices = pluginService.getExtensions(AuthenticationService.class);
-        if (authenticationServices.isEmpty()) {
-            throw new IllegalAttestationRequestException("no plugins found");
-        }
-
         String paProvider;
         try {
             String domain = new URL(request.getIdentifier().split("\\s+")[0]).getHost();
@@ -148,30 +170,14 @@ public class ApiController {
 
         // fallback to auth0 for backward compatibility
         final String idProvider = Objects.requireNonNullElse(headers.get("x-pap-id-provider"), "auth0");
-
-        AuthenticationService authenticationService = authenticationServices.stream()
-                .filter(service -> service.idProvider().equals(idProvider))
-                .findFirst()
+        AuthenticationService authenticationService = authenticationServiceManager.findByIdProvider(idProvider)
                 .orElseThrow(() -> new IllegalAttestationRequestException("unsupported idProvider: " + idProvider));
 
         LOGGER.debug("AuthenticationService in use: {}, matched idProvider {} to verify paProvider {}"
                 , authenticationService.getClass().getName(), idProvider, paProvider);
 
-        Map<String, List<String>> filteredHeaders = headers.asMap()
-                .entrySet()
-                .stream()
-                .map(map -> {
-                    // backward compatibility for old request use x-ac header
-                    if ("x-ac".equalsIgnoreCase(map.getKey())) {
-                        return Map.entry("x-pap-ac", map.getValue());
-                    } else {
-                        return map;
-                    }
-                })
-                .filter(map -> map.getKey().toLowerCase().startsWith("x-pap"))
-                .collect(Collectors.toMap(map -> map.getKey().toLowerCase(), Map.Entry::getValue));
-
-        if (!authenticationService.verify(filteredHeaders, paProvider, request.getId())) {
+        Map<String, List<String>> filteredHeaders = authenticationServiceManager.filterRequiredHeaders(headers);
+        if (!authenticationService.verifySocialConnection(filteredHeaders, paProvider, request.getId())) {
             throw new IllegalAttestationRequestException("identifier could not be verified.");
         }
 
@@ -212,7 +218,7 @@ public class ApiController {
     @Consumes(MediaType.APPLICATION_JSON)
     public Map<String, List<Object>> health() {
         List<PluginWrapper> plugins = pluginService.getPlugins();
-        List<AuthenticationService> authenticationServices = pluginService.getExtensions(AuthenticationService.class);
+        List<AuthenticationService> authenticationServices = authenticationServiceManager.getAll();
         return Map.of(
                 "plugins", plugins.stream()
                         .map(plugin -> Map.of(
@@ -255,13 +261,13 @@ public class ApiController {
                 @SuppressWarnings("unchecked")
                 String errorCodes = String.join(",", ((List<String>) result.get("error-codes")));
                 LOGGER.error("Recaptcha verify failed, caused by: {}",
-                    errorCodes);
+                        errorCodes);
                 throw new RecaptchaVerifyFailedException(
-                    "Recaptcha verify failed, cause:" + errorCodes);
+                        "Recaptcha verify failed, cause:" + errorCodes);
             }
         } catch (NullPointerException e) {
             throw new RecaptchaVerifyFailedException(
-                "Recaptcha verify failed: Could not retrieve recaptcha result");
+                    "Recaptcha verify failed: Could not retrieve recaptcha result");
         }
     }
 
@@ -279,7 +285,7 @@ public class ApiController {
             ticketDecoder = new TicketDecoder(CryptoUtils.getECPublicKeyParameters(devconPubkeyHex));
         }
         try {
-            Ticket ticket =  ticketDecoder.decode(URLUtility.decodeData(encodedTicket));
+            Ticket ticket = ticketDecoder.decode(URLUtility.decodeData(encodedTicket));
             if (!ticket.verify() || !ticket.checkValidity()) {
                 throw new IllegalAttestationRequestException("Could decode a valid or verifiable ticket");
             }

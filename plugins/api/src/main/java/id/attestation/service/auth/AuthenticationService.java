@@ -22,6 +22,17 @@ public interface AuthenticationService extends ExtensionPoint {
      * @param userId     userId from paProvider
      * @return boolean
      */
-    boolean verify(Map<String, List<String>> headers, String paProvider, String userId);
+    boolean verifySocialConnection(Map<String, List<String>> headers, String paProvider, String userId);
+
+    /**
+     * Use this extension to verify user email.
+     *
+     * @param headers   http headers starts with "x-pap" pass to verify, implementation method should extract required params from headers
+     * @param userEmail user email to be verified
+     * @return boolean
+     */
+    default boolean verifyEmail(Map<String, List<String>> headers, String userEmail) {
+        return verifySocialConnection(headers, "email", userEmail);
+    }
 
 }

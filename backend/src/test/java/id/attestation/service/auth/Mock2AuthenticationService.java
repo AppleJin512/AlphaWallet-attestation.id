@@ -14,7 +14,7 @@ public class Mock2AuthenticationService implements AuthenticationService {
     }
 
     @Override
-    public boolean verify(Map<String, List<String>> headers, String paProvider, String userId) {
+    public boolean verifySocialConnection(Map<String, List<String>> headers, String paProvider, String userId) {
         return false;
     }
 

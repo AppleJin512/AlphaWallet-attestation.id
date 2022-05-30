@@ -5,43 +5,36 @@
   import {
     clearAll,
     clearAttestation,
+    getCurrentEmail,
     getRawAttestation,
     getRawCurrentAccount,
+    requestEmail,
+    sameEmail,
   } from "./common/AppState";
+  import { initAuth } from "./common/AuthService";
   import * as flow from "./common/Flow";
-  import { current, STEP_CONNECT_WALLET } from "./common/Flow";
+  import { current } from "./common/Flow";
   import {
     createAndReturnAttestationFromMagicLink,
     setMagicLinkData,
   } from "./common/MagicLink";
-  import * as walletService from "./common/WalletService";
   import CurrentStep from "./component/CurrentStep.svelte";
   import FlowStatus from "./component/FlowStatus.svelte";
-
-  flow.loadCurrentStep();
 
   let attestation;
   let attestationExpired;
 
-  onMount(async () => {
-    if (await walletService.isEnabled()) {
-      await walletService.connect($current);
-      if ($current === flow.start) {
-        current.set(flow.transition[flow.start].nextStep());
-      }
-    } else {
-      current.set(flow.start);
-    }
-    gotoFirstStepWhenAttestationExpired();
-
+  onMount(() => {
+    clearWhenAttestationExpired();
     registerEventListenerWhenCreatedByIntegration();
+    initAuth();
   });
 
   onDestroy(() => {
     removeEventListenerAnyway();
   });
 
-  function gotoFirstStepWhenAttestationExpired() {
+  function clearWhenAttestationExpired() {
     attestation = getRawAttestation();
     if (attestation) {
       const myAttestation = parseAttestation(attestation.attestation);
@@ -52,7 +45,6 @@
       if (attestationExpired) {
         console.error("attestation is expired, please apply a new one.");
         clearAttestation();
-        current.set(flow.start);
       }
     }
   }
@@ -63,9 +55,7 @@
         "message",
         (event) => {
           if (event.data.force) {
-            // force clear localstorage when calling from iframe
             clearAll();
-            current.set(flow.start);
             reply({
               display: true,
             });
@@ -83,6 +73,20 @@
   }
 
   const tryToReturnAttestation = async function (data) {
+    if (data.email) {
+      const savedEmail = await getCurrentEmail();
+      if (data.email != savedEmail) {
+        $requestEmail = data.email;
+        clearAttestation();
+        reply({
+          display: true,
+        });
+        return;
+      } else {
+        $sameEmail = true;
+      }
+    }
+
     if (!attestation || attestationExpired) {
       console.log("!attestation || attestationExpired");
       if (data.magicLink && data.email) {
@@ -92,10 +96,7 @@
         if (rawCurrentAccount) {
           createAndReturnAttestationFromMagicLink();
         } else {
-          if (await walletService.isEnabled()) {
-            await walletService.connect(STEP_CONNECT_WALLET);
-          }
-          current.set(STEP_CONNECT_WALLET);
+          current.set(flow.start);
           reply({
             display: true,
           });

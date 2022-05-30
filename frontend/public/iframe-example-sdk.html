@@ -96,8 +96,9 @@
     function getAttestation() {
       document.getElementById("btn").disabled = true;
 
-      const parent = document.querySelector('input[name="parent"]:checked')
-        .value;
+      const parent = document.querySelector(
+        'input[name="parent"]:checked'
+      ).value;
       let modal = document.getElementById("myModal");
 
       let option = {};

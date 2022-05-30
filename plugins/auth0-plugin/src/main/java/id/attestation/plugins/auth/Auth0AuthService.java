@@ -33,11 +33,10 @@ public class Auth0AuthService implements AuthenticationService {
     }
 
     @Override
-    public boolean verify(Map<String, List<String>> headers, String paProvider, String userId) {
+    public boolean verifySocialConnection(Map<String, List<String>> headers, String paProvider, String userId) {
         try {
             String accessToken = headers.get("x-pap-ac").get(0);
-            Request<UserInfo> request = this.authAPI.userInfo(accessToken);
-            UserInfo info = request.execute();
+            UserInfo info = getUserInfo(accessToken);
             // auth0 will combine paProvider and userId in '<paProvider>|<userId>' format into 'sub' field.
             // E.g: {"sub": "twitter|123456789"}
             String sub = (String) info.getValues().get("sub");
@@ -45,15 +44,37 @@ public class Auth0AuthService implements AuthenticationService {
             String provider = subSplit[0];
             String id = subSplit[1];
             return userId.equals(id) && paProvider.equals(provider);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean verifyEmail(Map<String, List<String>> headers, String userEmail) {
+        try {
+            String accessToken = headers.get("x-pap-ac").get(0);
+            UserInfo info = getUserInfo(accessToken);
+            // email will be find in "email" field
+            String email = (String) info.getValues().get("email");
+            return email.equalsIgnoreCase(userEmail);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private UserInfo getUserInfo(String accessToken) throws Auth0Exception {
+        try {
+            Request<UserInfo> request = this.authAPI.userInfo(accessToken);
+            return request.execute();
         } catch (APIException exception) {
             LOGGER.error("APIException:", exception);
-            return false;
+            throw exception;
         } catch (Auth0Exception exception) {
             LOGGER.error("Auth0Exception:", exception);
-            return false;
+            throw exception;
         } catch (Exception e) {
             LOGGER.error("Unknown exception:", e);
-            return false;
+            throw e;
         }
     }
 

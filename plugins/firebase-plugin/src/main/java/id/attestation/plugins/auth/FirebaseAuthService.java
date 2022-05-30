@@ -34,7 +34,7 @@ public class FirebaseAuthService implements AuthenticationService {
     }
 
     @Override
-    public boolean verify(Map<String, List<String>> headers, String paProvider, String userId) {
+    public boolean verifySocialConnection(Map<String, List<String>> headers, String paProvider, String userId) {
         try {
             String accessToken = headers.get("x-pap-ac").get(0);
             FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(accessToken);
@@ -50,6 +50,22 @@ public class FirebaseAuthService implements AuthenticationService {
                     .get(signInProvider)
                     .get(0);
             return userId.equals(signInProviderUid) && signInProvider.equals(signInProviderMapping(paProvider));
+        } catch (FirebaseAuthException exception) {
+            LOGGER.error("FirebaseAuthException:", exception);
+            return false;
+        } catch (Exception e) {
+            LOGGER.error("Unknown exception:", e);
+            return false;
+        }
+    }
+
+    @Override
+    public boolean verifyEmail(Map<String, List<String>> headers, String userEmail) {
+        try {
+            String accessToken = headers.get("x-pap-ac").get(0);
+            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(accessToken);
+            String email = decodedToken.getEmail();
+            return email.equalsIgnoreCase(userEmail);
         } catch (FirebaseAuthException exception) {
             LOGGER.error("FirebaseAuthException:", exception);
             return false;

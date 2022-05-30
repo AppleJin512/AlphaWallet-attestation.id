@@ -6,21 +6,21 @@
 
 ## Projects Organization
 
-Master Poject + Plugin Project:
+Master Project + Plugin Project:
 
 - Master Project: current backend project + plugin related functions, including:
-  - plugin respositry
+  - plugin repository
   - plugin lifecycle management
-  - relayer of requests of all kinds of public attestation
+  - relater of requests of all kinds of public attestation
 - Plugin Project:
-  - implmentation of the extension point defined by the master project.
+  - implementation of the extension point defined by the master project.
 
 ## Plugin Development
 
 ### How to develop a plugin
 
 1. `git clone` a plugin project starter, which is a plain java gradle project, including a plugin interface java jar.
-1. implment the plugin interface.
+1. implement the plugin interface.
    - mainly about the verification of the identifier in the request is the one sending the request.
 1. test
 1. build
@@ -56,9 +56,9 @@ NOTE: You have to clone and build your own version of `attestation.id`.
 Basically, there are two plugin types planned:
 
 - Java Plugin
-  - a java jar implmenting the interfaces defined by `attestation.id`.
+  - a java jar implementing the interfaces defined by `attestation.id`.
 - Bridge Plugin
-  - a plugin implmenting the restful api endpoints defined by `attestation.id`.
+  - a plugin implementing the restful api endpoints defined by `attestation.id`.
 
 The `Bridge Plugin` allows devs to use the tools they are familiar with to develop a plugin.
 
@@ -86,7 +86,16 @@ String idProvider();
  * @param userId userId from idProvider
  * @return boolean
  */
-boolean verify(Map<String, List<String>> headers, String paProvider, String userId);
+boolean verifySocialConnection(Map<String, List<String>> headers, String paProvider, String userId);
+
+/**
+ * Use this extension to verify user email.
+ *
+ * @param headers   http headers starts with "x-pap" pass to verify, implementation method should extract required params from headers
+ * @param userEmail user email to be verified
+ * @return boolean
+ */
+boolean verifyEmail(Map<String, List<String>> headers, String userEmail);
 ```
 
 `idProvider` will be extracted from http request header `x-pap-id-provider`. E.g:
@@ -191,10 +200,14 @@ public class DemoImpl implements AuthenticationService {
     }
 
     @Override
-    public boolean verify(Map<String, List<String>> headers, String idProvider, String userId) {
+    public boolean verifySocialConnection(Map<String, List<String>> headers, String idProvider, String userId) {
         return true;
     }
 
+    @Override
+    public boolean verifyEmail(Map<String, List<String>> headers, String userEmail) {
+      return true;
+    }
 }
 ```
 

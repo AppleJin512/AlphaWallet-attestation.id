@@ -1,54 +1,126 @@
-<script lang="ts">
-  import { onMount } from "svelte";
+<script>
   import * as walletService from "../common/WalletService";
   import * as flow from "../common/Flow";
   import { current } from "../common/Flow";
-  import { hasMagicLink } from "../common/MagicLink";
-
   import {
-    STEP_CONFIRMATION,
-  } from "../common/Flow";
+    auth0AccessToken,
+    currentWallet,
+    getRawEmail,
+    getRawPair,
+    saveAttestation,
+  } from "../common/AppState";
+  import { createAttestationRequestAndSecret } from "../attestation/AttesationUtils";
+  import * as cryptoUtils from "../common/CryptoUtils";
+  import { bigintToHex } from "bigint-conversion";
 
-  function connectWalletClick() {
-    walletService.connect(hasMagicLink() ? STEP_CONFIRMATION :flow.transition[$current].nextStep());
+  const BASE_BACKEND_URL = __myapp.env.BASE_BACKEND_URL;
+  const VALIDITY = __myapp.env.VALIDITY;
+  const ATTESTOR = __myapp.env.ATTESTOR;
+
+  let isLoading = false;
+  let canTry = false;
+
+  $: if ($auth0AccessToken) {
+    if ($currentWallet) {
+      gotoSign();
+    } else {
+      walletService.connect();
+    }
   }
 
-  onMount(async () => {
-    if (await walletService.isEnabled()) {
-      await walletService.connect($current);
+  const gotoSign = async () => {
+    try {
+      if (!getRawPair()) {
+        return;
+      }
+
+      const email = await cryptoUtils.decrypt(
+        getRawPair().privateKey,
+        getRawEmail()
+      );
+
+      isLoading = true;
+      const requestAndSecret = await createAttestationRequestAndSecret(
+        "mail",
+        email,
+        $currentWallet
+      );
+      if (requestAndSecret.result.request) {
+        try {
+          fetch(BASE_BACKEND_URL + "/api/attestation", {
+            method: "POST",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json",
+              "x-pap-ac": $auth0AccessToken,
+              "x-pap-id-provider": "auth0",
+            },
+            body: JSON.stringify({
+              validity: VALIDITY,
+              attestor: ATTESTOR,
+              publicRequest: requestAndSecret.result.request,
+            }),
+          })
+            .then(async (response) => {
+              if (response.status === 201) {
+                let result = await response.json();
+                saveAttestation({
+                  attestation: result.attestation,
+                  requestSecret: bigintToHex(requestAndSecret.secret),
+                });
+                flow.saveCurrentStep(flow.transition[$current].nextStep);
+              }
+            })
+            .catch((error) => {
+              isLoading = false;
+              console.error(error);
+            });
+        } catch (error) {
+          isLoading = false;
+          canTry = true;
+          canTry = true;
+          console.error(error);
+        }
+      }
+    } catch (error) {
+      console.error(error);
+      canTry = true;
+      isLoading = false;
     }
-  });
+  };
 </script>
 
-<div class="title">Connect to Wallet</div>
-<img
-  src="assets/images/wallet/metamask.png"
-  on:click={connectWalletClick}
-  alt="wallet"
-/>
-
-<div class="no-wallet">
-  <a href="https://metamask.io/" target="_blank">I don’t have a wallet.</a>
-</div>
+{#if isLoading}
+  <div class="verifiedLoading" />
+  <div class="content">
+    Please confirm the message on your mobile to get the NFT with your email.
+  </div>
+{:else if canTry}
+  <div class="retry-desc">Something wrong, please try again.</div>
+  <button on:click={gotoSign} class="retry">Try again</button>
+{/if}
 
 <style>
-  img {
-    width: 200px;
-    height: 60px;
-    margin-bottom: 16px;
-    cursor: pointer;
+  .retry {
+    width: 128px;
+  }
+  .retry-desc {
+    text-align: center;
+    margin-top: 32px;
   }
 
-  .no-wallet {
-    height: 29px;
-    margin: 20px auto;
-    font-size: 17px;
-    font-weight: 600;
-    font-stretch: normal;
-    font-style: normal;
-    line-height: 1.71;
-    letter-spacing: normal;
-    text-align: center;
-    color: #007fed;
+  .verifiedLoading {
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    z-index: 9999;
+    border-radius: 50%;
+    animation: loadingmove 1.2s linear infinite;
+    -webkit-animation: loadingmove 1.2s linear infinite;
+    margin-top: 40px;
+    border: 3px solid #cccccc;
+    border-bottom: 3px solid transparent;
+    margin-left: auto;
+    margin-right: auto;
   }
 </style>

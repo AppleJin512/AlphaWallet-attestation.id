@@ -1,4 +1,4 @@
-package id.attestation.service;
+package id.attestation.service.plugin;
 
 import jakarta.inject.Singleton;
 import org.pf4j.*;

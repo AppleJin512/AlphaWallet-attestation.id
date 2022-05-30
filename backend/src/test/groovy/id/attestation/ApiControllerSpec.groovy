@@ -116,10 +116,40 @@ class ApiControllerSpec extends Specification {
         1 * recaptchaService.verify(_, 'xxx') >> Mono.just([success: true])
     }
 
+    void "/attestation: should return bad request when x-pap-id-provider not provide in header"() {
+        given:
+        HttpRequest httpRequest = HttpRequest.POST('/attestation'
+                , new AttestationWebRequest(3600, 'AlphaWallet', TestUtils.publicRequest))
+
+        when:
+        client.toBlocking().exchange(httpRequest, OtpResponse)
+
+        then:
+        HttpClientResponseException thrown = thrown()
+        thrown.status == HttpStatus.BAD_REQUEST
+    }
+
+    void "/attestation: should return bad request when email could not be verified"() {
+        given:
+        HttpRequest httpRequest = HttpRequest.POST('/attestation'
+                , new AttestationWebRequest(3600, 'AlphaWallet', TestUtils.publicRequest))
+                .header('x-pap-id-provider', 'alwaysSuccess')
+                .header('x-pap-ac', '123456')
+
+        when:
+        client.toBlocking().exchange(httpRequest, OtpResponse)
+
+        then:
+        HttpClientResponseException thrown = thrown()
+        thrown.status == HttpStatus.BAD_REQUEST
+    }
+
     @Unroll
     void "/attestation: should return bad request for invalid request parameters"() {
         given:
-        HttpRequest httpRequest = HttpRequest.POST('/attestation', new AttestationWebRequest(validity, attestor, publicRequest))
+        HttpRequest httpRequest = HttpRequest.POST('/attestation'
+                , new AttestationWebRequest(validity, attestor, publicRequest))
+                .header('x-pap-id-provider', 'alwaysSuccess')
 
         when:
         client.toBlocking().exchange(httpRequest, OtpResponse)
@@ -145,7 +175,8 @@ class ApiControllerSpec extends Specification {
         when:
         HttpResponse response = client.toBlocking().
                 exchange(HttpRequest.POST('/attestation'
-                        , new AttestationWebRequest(3600, 'AlphaWallet', TestUtils.publicRequest)),
+                        , new AttestationWebRequest(3600, 'AlphaWallet', TestUtils.publicRequest))
+                        .header('x-pap-id-provider', 'alwaysSuccess'),
                         AttestationWebResponse)
         AttestationWebResponse result = response.body()
 

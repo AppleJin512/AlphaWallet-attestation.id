@@ -58,6 +58,14 @@ application {
     mainClass.set('id.attestation.Application')
 }
 
+run {
+    Set<Project> plugins = project(':plugins').subprojects.findAll {
+        it.name != 'api'
+    }
+    dependsOn plugins.collect { "${it.path}:shadowJar" }
+    systemProperties = ['pf4j.pluginsDir': plugins.collect { "${it.buildDir}/libs" }.join(',')]
+}
+
 test {
     environment 'RECAPTCHA_KEY', 'XXXX'
     environment 'ATTESTOR_PRIVATE_KEY', 'MIICSwIBADCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBBIIBVTCCAVECAQEEIP0NZmYQRZgBrndcBR6RUJdEfBaQoF+/yUNQHpEM7s7GoIHjMIHgAgEBMCwGByqGSM49AQECIQD////////////////////////////////////+///8LzBEBCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAcEQQR5vmZ++dy7rFWgYpXOhwsHApv82y3OKNlZ8oFbFvgXmEg62ncmo8RlXaT7/A4RCKj9F7RIpoVUGZxH0I/7ENS4AiEA/////////////////////rqu3OavSKA7v9JejNA2QUECAQGhRANCAASs39hcmVWwLtOaxxgp26vuszAncsReQC1Rjb6K7IixLQESpfQ1cNaqivTzDYTgzz1cQ4GswxUvF7HOHaqL0gyP'

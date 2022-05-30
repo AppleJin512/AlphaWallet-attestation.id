@@ -15,7 +15,7 @@ public class DemoImpl implements AuthenticationService {
     }
 
     @Override
-    public boolean verify(Map<String, List<String>> headers, String paProvider, String userId) {
+    public boolean verifySocialConnection(Map<String, List<String>> headers, String paProvider, String userId) {
         String yourCustomHeaderValue = headers.get("x-pap-custom").get(0);
         // =======
         // your verify code here

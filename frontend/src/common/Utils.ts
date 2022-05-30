@@ -67,3 +67,17 @@ export function bnToBuf(bn: bigint, length = 0): Uint8Array {
 
   return u8;
 }
+
+export const errorMsgPipe = (message: string) => {
+  let errorMsg = message;
+  if (message.indexOf("User denied") > -1) {
+    errorMsg = "Transaction cancelled by user.";
+  } else {
+    if (message.indexOf("Insuffient balance.") > -1) {
+      errorMsg = "Insuffient balance.";
+    } else {
+      errorMsg = "Sorry, something is not right. Refresh and try again.";
+    }
+  }
+  return errorMsg;
+};

@@ -1,73 +1,55 @@
 <script>
   import { onMount } from "svelte";
   import * as cryptoUtils from "../common/CryptoUtils";
-  import { createAttestationRequestAndSecret } from "../attestation/AttesationUtils";
-  import { bigintToHex } from "bigint-conversion";
   import * as flow from "../common/Flow";
   import { current } from "../common/Flow";
   import {
     getRawEmail,
-    getRawOTP,
     getRawPair,
-    saveAttestation,
-    getRawCurrentAccount,
+    auth0AccessToken,
   } from "../common/AppState";
 
   import {
     createAndReturnAttestationFromMagicLink,
     hasMagicLink,
   } from "../common/MagicLink";
+  import { authHandler, initAuth } from "../common/AuthService";
+  import { errorMsgPipe } from "../common/Utils";
 
   let disabled = true;
   let isLoading = false;
 
   let email;
-
-  const BASE_BACKEND_URL = __myapp.env.BASE_BACKEND_URL;
-  const VALIDITY = __myapp.env.VALIDITY;
-  const ATTESTOR = __myapp.env.ATTESTOR;
+  let errorMsg;
+  let isVerfiied = false;
 
   const submit = async function () {
-    disabled = true;
+    if (window.location.hash) {
+      if (!$authHandler) {
+        await initAuth();
+      }
+      $authHandler.parseUrl(window.location.href, async (err, authResult) => {
+        if (err) {
+          console.log(err);
+          errorMsg = err.message || err.errorDescription;
+          history.replaceState({}, "", "/");
+        } else {
+          if (authResult) {
+            try {
+              isVerfiied = true;
+              $auth0AccessToken = authResult.accessToken;
 
-    const requestAndSecret = await createAttestationRequestAndSecret(
-      "mail",
-      email,
-      getRawCurrentAccount()
-    );
-
-    console.log(requestAndSecret);
-    console.log(requestAndSecret.result.request);
-
-    isLoading = true;
-
-    fetch(BASE_BACKEND_URL + "/api/attestation", {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        validity: VALIDITY,
-        attestor: ATTESTOR,
-        publicRequest: requestAndSecret.result.request,
-      }),
-    })
-      .then(async (response) => {
-        isLoading = false;
-        if (response.status === 201) {
-          let result = await response.json();
-          saveAttestation({
-            attestation: result.attestation,
-            requestSecret: bigintToHex(requestAndSecret.secret),
-          });
-          flow.saveCurrentStep(flow.transition[$current].nextStep);
+              history.replaceState({}, "", "/");
+              flow.saveCurrentStep(flow.STEP_CONNECT_WALLET);
+            } catch (error) {
+              errorMsg = errorMsgPipe(error.message);
+              isLoading = false;
+              disabled = false;
+            }
+          }
         }
-      })
-      .catch((error) => {
-        console.log(error);
-        isLoading = false;
       });
+    }
   };
 
   const resend = function () {
@@ -127,7 +109,6 @@
       codes[i] = e.key;
       focusNext(e);
     }
-
     tryToEnableComfirmButton();
   };
 
@@ -135,26 +116,45 @@
     if (hasMagicLink()) {
       createAndReturnAttestationFromMagicLink();
     } else {
-      document.getElementById("code0").focus();
-      if (getRawPair()) {
-        otpCode = await cryptoUtils.decrypt(
-          getRawPair().privateKey,
-          getRawOTP()
-        );
-        console.log(otpCode);
-        email = await cryptoUtils.decrypt(
-          getRawPair().privateKey,
-          getRawEmail()
-        );
-      } else {
-        console.log("key pair missed...");
-      }
+      document.getElementById("code0")?.focus();
+      await getEmail();
       document.addEventListener("paste", pasteListener);
     }
+    submit();
   });
 
-  function tryToEnableComfirmButton() {
-    if (otpCode && codes.join("") === otpCode) {
+  const getEmail = async () => {
+    if (getRawPair()) {
+      email = await cryptoUtils.decrypt(getRawPair().privateKey, getRawEmail());
+    } else {
+      console.log("key pair missed...");
+    }
+  };
+
+  const confirm = () => {
+    isLoading = true;
+    disabled = true;
+    $authHandler.login(email, codes.join(""), async (err, res) => {
+      console.log("login--", err, res);
+      if (err) {
+        if (
+          err.description.indexOf("expired") > -1 ||
+          err.description.indexOf("maximum number") > -1
+        ) {
+          errorMsg =
+            err.description.split(".")[0] + ". Please try to resend again.";
+        } else {
+          errorMsg = err.description;
+        }
+        disabled = false;
+        isLoading = false;
+        otpCode = "";
+      }
+    });
+  };
+
+  async function tryToEnableComfirmButton() {
+    if (codes.join("").length === 6) {
       disabled = false;
     } else {
       disabled = true;
@@ -189,7 +189,7 @@
 
 {#if hasMagicLink()}
   <div class="title">Creating Attestation</div>
-{:else}
+{:else if !isVerfiied}
   <div class="title">Enter Code</div>
 
   <div class="content">
@@ -234,7 +234,7 @@
       {/if}
     {/each}
 
-    <button on:click={submit} {disabled}>
+    <button on:click={confirm} {disabled}>
       {#if isLoading}
         <div class="loading" />
       {:else}
@@ -242,15 +242,31 @@
       {/if}</button
     >
   </div>
-
+  {#if errorMsg}
+    <div class="error">{errorMsg}</div>
+  {/if}
   <div class="note">
     Did not receive the email? Check your spam,
     <br />
     <span on:click={resend} href="" class="resend"> or resend now.</span>
   </div>
+{:else if errorMsg}
+  <div class="error margin-top">{errorMsg}</div>
+  <div class="note">
+    <span on:click={resend} href="" class="resend">resend now.</span>
+  </div>
+{:else}
+  <div class="verifiedLoading" />
+  <div class="mt-8 content">
+    Please confirm the message on your mobile to get the NFT with your email.
+  </div>
 {/if}
 
 <style>
+  .margin-top {
+    margin-top: 40px;
+  }
+
   input {
     width: 14%;
     padding: 0;
@@ -288,7 +304,30 @@
     color: #007fed;
   }
 
+  .error {
+    color: red;
+  }
+
   .resend {
     cursor: pointer;
+  }
+
+  .verifiedLoading {
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    z-index: 9999;
+    border-radius: 50%;
+    animation: loadingmove 1.2s linear infinite;
+    -webkit-animation: loadingmove 1.2s linear infinite;
+    margin-top: 40px;
+    border: 3px solid #cccccc;
+    border-bottom: 3px solid transparent;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .content {
+    max-width: 396px;
   }
 </style>

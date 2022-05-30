@@ -84,6 +84,9 @@ Find more details, please check [cryptoUtils.ts in frontend project](../frontend
   - validity: how many seconds the attestation should be valid
   - attestor: name of attestor
   - publicRequest: request data
+  - headers content:
+    - x-pap-ac: access token of this identifier
+    - x-pap-id-provider: id provider of this identifier. E.g: `auth0`, `firebase`, and so on.
 - response: json format
   - attestation: attestation value, BASE64-Encoded string
   - attestorPublicKey: public key of the attestor, BASE64-Encoded string
@@ -91,7 +94,7 @@ Find more details, please check [cryptoUtils.ts in frontend project](../frontend
 Example:
 
 ```shell
-curl -X POST -H 'Content-Type: application/json' -i http://localhost:8080/api/attestation --data '{
+curl -X POST -H 'Content-Type: application/json' -H 'x-pap-ac: your_access_token' -H 'x-pap-id-provider: plugin_id' -i http://localhost:8080/api/attestation --data '{
 "validity": 3600,
 "attestor": "AlphaWallet",
 "publicRequest": "{"signatureInHex":"0x72702adf76437214fa88c4880df06d1456d17dc9ebeab58fc75088c2573f1f114bf23359ff8be40dd76b170186229c1007d020a97bf48c30f23eeffb2bb79a121c","jsonSigned":"{\"types\":{\"EIP712Domain\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"}],\"AttestationRequest\":[{\"name\":\"payload\",\"type\":\"string\"},{\"name\":\"description\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"string\"},{\"name\":\"identifier\",\"type\":\"string\"}]},\"primaryType\":\"AttestationRequest\",\"message\":{\"payload\":\"MIIBAgIBATCB_ARBBAmgnnZ6GqlmptON7vUlSzS1BiwkBq0FvyWHUvVaIrFHEhOuGkVN_w58auM_of7djTXgyDJ6_0Riy_vFOeQwusYEICUamcA97wgkmMxQGEByASCu-b31vz4bd8QxigAJBq1BBEEEKgWKKy5kkOXxDtO1T3nfnSDlPxsBexeQR8eQ4jcmKcMq6YdrXk3vl0wqEznyiSTLTuhiIuBBU0X17FGKxb-TEQRSMFgxNkYxQ0RGNTIwMEQ3QUU3RjA3QzE1MjJGMTkwNTJBNzIyRDkzOTcwqZU50y9kqXbiNUmNpswjqJjyXO1uD4eQiw8qoNwfgHwAAAF5NpzQjg\",\"description\":\"Linking Ethereum address to phone or email\",\"timestamp\":\"Tue May 04 2021 17:01:57 GMT+0800\",\"identifier\":\"jianhgreat@hotmail.com\"},\"domain\":{\"name\":\"http://wwww.attestation.id\",\"version\":\"0.1\"}}"}"}'
@@ -132,7 +135,7 @@ curl -X POST -H 'Content-Type: application/json' -i http://localhost:8080/api/at
     - ethAddress: address for signing this message
     - identifier: full twitter identifier, eg: https://twitter.com/foxgem
   - headers content:
-    - x-ac: access token of this identifier
+    - x-pap-ac: access token of this identifier
     - x-pap-id-provider: id provider of this identifier. E.g: `auth0`, `firebase`, and so on.
 - response: json format
   - attestation: attestation value, BASE64-Encoded string
@@ -141,7 +144,7 @@ curl -X POST -H 'Content-Type: application/json' -i http://localhost:8080/api/at
 Example:
 
 ```shell
-curl -X POST -H 'Content-Type: application/json' -H 'x-ac: your_access_token' -i http://localhost:8080/api/attestation/public --data '{"id":"14190486","identifier":"https://twitter.com/foxgem","message":"536f6d65207465787420666f72204175746f6772617068657220746f207369676e20736f2077652063616e2067656e657261746520746865206174746573746174696f6e","signature":"0xa31ab92f335062cee755257a8157fbef20d98abeb06ec3fd6975b2ab3018c9327daaf2d91fc4efdffcd10c2ddcca37f37ffecf16fb3910f6881b39bb99e1fcf01c","ethAddress":"0x16f1CdF5200d7ae7f07c1522f19052A722D93970"}'
+curl -X POST -H 'Content-Type: application/json' -H 'x-pap-ac: your_access_token' -H 'x-pap-id-provider: plugin_id' -i http://localhost:8080/api/attestation/public --data '{"id":"14190486","identifier":"https://twitter.com/foxgem","message":"536f6d65207465787420666f72204175746f6772617068657220746f207369676e20736f2077652063616e2067656e657261746520746865206174746573746174696f6e","signature":"0xa31ab92f335062cee755257a8157fbef20d98abeb06ec3fd6975b2ab3018c9327daaf2d91fc4efdffcd10c2ddcca37f37ffecf16fb3910f6881b39bb99e1fcf01c","ethAddress":"0x16f1CdF5200d7ae7f07c1522f19052A722D93970"}'
 ```
 
 ### Ask for an UnSigned Nft attestation
@@ -319,6 +322,29 @@ For testing, run with (NOTE: with a clean env, except for the DEVCON_PUBLIC_KEY)
 
 ```shell
 ./gradlew test
+```
+
+### Run locally
+
+```sh
+./gradlew run
+```
+
+This will run backend with all plugins locally. You must declare all required environment variables before.
+
+E.g:
+
+```sh
+# required by backend
+export RECAPTCHA_KEY=XXXX ATTESTOR_PRIVATE_KEY=xxx DEVCON_PUBLIC_KEY=xxx RECAPTCHA_KEY=xxxx SENDGRID_APIKEY=xxxxx SENDGRID_FROM_EMAIL=xxxxx
+
+# required by auth0 plugin
+export AUTH0_DOMAIN=xxx AUTH0_CLIENT_ID=xxx AUTH0_CLIENT_SECRET=xxx
+
+# required by firebase plugin
+export GOOGLE_APPLICATION_CREDENTIALS=/path/to/firebase-adminsdk.json
+
+./gradlew run
 ```
 
 ### Build a fatjar
