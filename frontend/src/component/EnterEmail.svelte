@@ -8,8 +8,7 @@
     saveEmail,
     savePair,
     requestEmail,
-    sameEmail,
-    getRawAttestation
+    getRawAttestation,
   } from "../common/AppState";
 
   import { authHandler } from "../common/AuthService";
@@ -81,35 +80,35 @@
     let parsedAttestation;
     if (attestation) {
       parsedAttestation = parseAttestation(attestation.attestation);
-      if (!expired(parsedAttestation)){
+      if (!expired(parsedAttestation)) {
         attestationValid = true;
       }
     }
-
   });
 
   $: if ($requestEmail && inIframe) {
-      email = $requestEmail;
-      validateEmail(email);
+    email = $requestEmail;
+    validateEmail(email);
 
-      if ($requestEmail) {
-        inputDisabled = "disabled";
-      }
-
-      if (!(attestationValid)){
-        // if input disabled then auto-click "Submit"
-        if (!disabled && !autoSubmitFired) {
-          autoSubmitFired = true;
-          onSubmit(1);
-        }
-      }      
+    if ($requestEmail) {
+      inputDisabled = "disabled";
     }
+
+    if (!attestationValid) {
+      // if input disabled then auto-click "Submit"
+      if (!disabled && !autoSubmitFired) {
+        autoSubmitFired = true;
+        onSubmit(1);
+      }
+    }
+  }
 </script>
 
 <div class="title">Request Email Attestation</div>
 <div class="content">
-  Enter your email address you want to request an attestation. You will have to
-  copy and paste the code, that you will find in the email.
+  Enter your email address which you want to request an attestation for. You
+  will have to copy and paste the code that you will find in the email we will
+  be sending you.
 </div>
 <div class="input-div">
   <div class="label">Enter Email Address</div>
