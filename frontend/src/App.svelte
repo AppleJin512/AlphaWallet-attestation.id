@@ -1,23 +1,16 @@
 <script lang="ts">
   import { hexToBigint } from "bigint-conversion";
   import { onDestroy, onMount } from "svelte";
-  import { parseAttestation } from "./attestation/AttesationUtils";
+  import { parseAttestation, expired } from "./attestation/AttesationUtils";
   import {
     clearAll,
     clearAttestation,
     getCurrentEmail,
     getRawAttestation,
-    getRawCurrentAccount,
     requestEmail,
     sameEmail,
   } from "./common/AppState";
   import { initAuth } from "./common/AuthService";
-  import * as flow from "./common/Flow";
-  import { current } from "./common/Flow";
-  import {
-    createAndReturnAttestationFromMagicLink,
-    setMagicLinkData,
-  } from "./common/MagicLink";
   import CurrentStep from "./component/CurrentStep.svelte";
   import FlowStatus from "./component/FlowStatus.svelte";
 
@@ -73,10 +66,17 @@
   }
 
   const tryToReturnAttestation = async function (data) {
+    
+    if (data.debug) {
+      console.log("attestation.id postMessage data received: ", data);
+    }
+
     if (data.email) {
+      // moved up to always set $requestEmail
+      // we have to set $requestEmail because if attestation expired then we require filled email 
+      $requestEmail = data.email;
       const savedEmail = await getCurrentEmail();
       if (data.email != savedEmail) {
-        $requestEmail = data.email;
         clearAttestation();
         reply({
           display: true,
@@ -89,23 +89,11 @@
 
     if (!attestation || attestationExpired) {
       console.log("!attestation || attestationExpired");
-      if (data.magicLink && data.email) {
-        setMagicLinkData(data.email, data.magicLink);
 
-        let rawCurrentAccount = getRawCurrentAccount();
-        if (rawCurrentAccount) {
-          createAndReturnAttestationFromMagicLink();
-        } else {
-          current.set(flow.start);
-          reply({
-            display: true,
-          });
-        }
-      } else {
-        reply({
-          display: true,
-        });
-      }
+      reply({
+        display: true,
+      });
+      
     } else {
       reply({
         attestation: attestation.attestation,
@@ -114,13 +102,6 @@
       });
     }
   };
-
-  function expired(attestation) {
-    return (
-      attestation.signedInfo.validity.notAfter.generalizedTime.getTime() <
-      new Date().getTime()
-    );
-  }
 
   function reply(message) {
     parent.postMessage(message, "*");

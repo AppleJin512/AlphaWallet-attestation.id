@@ -9,10 +9,6 @@
     auth0AccessToken,
   } from "../common/AppState";
 
-  import {
-    createAndReturnAttestationFromMagicLink,
-    hasMagicLink,
-  } from "../common/MagicLink";
   import { authHandler, initAuth } from "../common/AuthService";
   import { errorMsgPipe } from "../common/Utils";
 
@@ -113,13 +109,11 @@
   };
 
   onMount(async () => {
-    if (hasMagicLink()) {
-      createAndReturnAttestationFromMagicLink();
-    } else {
-      document.getElementById("code0")?.focus();
-      await getEmail();
-      document.addEventListener("paste", pasteListener);
-    }
+
+    document.getElementById("code0")?.focus();
+    await getEmail();
+    document.addEventListener("paste", pasteListener);
+    
     submit();
   });
 
@@ -187,9 +181,7 @@
   }
 </script>
 
-{#if hasMagicLink()}
-  <div class="title">Creating Attestation</div>
-{:else if !isVerfiied}
+{#if !isVerfiied}
   <div class="title">Enter Code</div>
 
   <div class="content">

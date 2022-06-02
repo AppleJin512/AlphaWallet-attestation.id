@@ -9,13 +9,21 @@
     savePair,
     requestEmail,
     sameEmail,
+    getRawAttestation
   } from "../common/AppState";
+
   import { authHandler } from "../common/AuthService";
+
+  import { parseAttestation, expired } from "../attestation/AttesationUtils";
 
   let disabled;
   let isLoading = false;
   let email = "";
   let inputDisabled = "";
+  let inIframe = window.location !== window.parent.location;
+
+  let attestationValid = false;
+  let autoSubmitFired = false;
 
   async function onSubmit(token) {
     if (email) {
@@ -68,15 +76,34 @@
 
   onMount(async () => {
     validateEmail(email);
+
+    let attestation = getRawAttestation();
+    let parsedAttestation;
+    if (attestation) {
+      parsedAttestation = parseAttestation(attestation.attestation);
+      if (!expired(parsedAttestation)){
+        attestationValid = true;
+      }
+    }
+
   });
 
-  $: if ($requestEmail) {
-    email = $requestEmail;
-    if (window.location !== window.parent.location && !$sameEmail) {
-      inputDisabled = "disabled";
+  $: if ($requestEmail && inIframe) {
+      email = $requestEmail;
+      validateEmail(email);
+
+      if ($requestEmail) {
+        inputDisabled = "disabled";
+      }
+
+      if (!(attestationValid)){
+        // if input disabled then auto-click "Submit"
+        if (!disabled && !autoSubmitFired) {
+          autoSubmitFired = true;
+          onSubmit(1);
+        }
+      }      
     }
-    validateEmail(email);
-  }
 </script>
 
 <div class="title">Request Email Attestation</div>

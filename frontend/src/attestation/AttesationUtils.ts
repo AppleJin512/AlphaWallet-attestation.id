@@ -53,3 +53,10 @@ function currentTimestampString() {
 export function parseAttestation(attestation: string) {
   return AsnParser.parse(str2ab(atob(attestation)), MyAttestationDecoded);
 }
+
+export function expired(attestation) {
+  return (
+    attestation.signedInfo.validity.notAfter.generalizedTime.getTime() <
+    new Date().getTime()
+  );
+}
