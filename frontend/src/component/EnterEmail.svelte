@@ -57,7 +57,7 @@
   }
 
   const validateEmail = (value) => {
-    email = value;
+    email = value.toLowerCase();
     if (email && /\S+@\S+\.\S+/.test(email)) {
       enableSubmitBtn();
     } else {
