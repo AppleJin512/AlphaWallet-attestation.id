@@ -36,7 +36,9 @@
     <div class="unit">SECONDS</div>
   </div>
   <div class="footer">
-    Time util <scan class="subject">{notAfter.toLocaleString()}</scan>
+    Valid until <scan class="subject"
+      >{notAfter.toString().split("GMT")[0].trim()}</scan
+    >
   </div>
 </div>
 

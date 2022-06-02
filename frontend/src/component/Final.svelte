@@ -51,7 +51,7 @@
       <button on:click={returnAndClose}>Close</button>
     {/if}
     <div>
-      Apply attestation again?
+      Apply for an attestation again?
       <span on:click={apply} href="" class="apply"> Apply Now </span>
     </div>
   </div>
