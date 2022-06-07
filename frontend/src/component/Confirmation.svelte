@@ -250,7 +250,7 @@
 {:else}
   <div class="verifiedLoading" />
   <div class="mt-8 content">
-    Please confirm the message on your mobile to get the NFT with your email.
+    Please confirm the message in your 'wallet' to complete verification.
   </div>
 {/if}
 

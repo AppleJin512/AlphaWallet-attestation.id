@@ -93,7 +93,7 @@
 {#if isLoading}
   <div class="verifiedLoading" />
   <div class="content">
-    Please confirm the message on your mobile to get the NFT with your email.
+    Please confirm the message in your 'wallet' to complete verification.
   </div>
 {:else if canTry}
   <div class="retry-desc">Something wrong, please try again.</div>
