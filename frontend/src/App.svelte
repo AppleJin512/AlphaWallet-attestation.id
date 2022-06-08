@@ -7,6 +7,7 @@
     clearAttestation,
     getCurrentEmail,
     getRawAttestation,
+    providerName,
     requestEmail,
     sameEmail,
   } from "./common/AppState";
@@ -66,14 +67,17 @@
   }
 
   const tryToReturnAttestation = async function (data) {
-    
     if (data.debug) {
       console.log("attestation.id postMessage data received: ", data);
     }
 
+    if (data.providerName) {
+      $providerName = data.providerName;
+    }
+
     if (data.email) {
       // moved up to always set $requestEmail
-      // we have to set $requestEmail because if attestation expired then we require filled email 
+      // we have to set $requestEmail because if attestation expired then we require filled email
       $requestEmail = data.email;
       const savedEmail = await getCurrentEmail();
       if (data.email != savedEmail) {
@@ -93,7 +97,6 @@
       reply({
         display: true,
       });
-      
     } else {
       reply({
         attestation: attestation.attestation,

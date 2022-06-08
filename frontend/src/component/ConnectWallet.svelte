@@ -8,6 +8,7 @@
     getRawEmail,
     getRawPair,
     saveAttestation,
+    providerName,
   } from "../common/AppState";
   import { createAttestationRequestAndSecret } from "../attestation/AttesationUtils";
   import * as cryptoUtils from "../common/CryptoUtils";
@@ -20,11 +21,13 @@
   let isLoading = false;
   let canTry = false;
 
+  console.log("$providerName---", $providerName);
+
   $: if ($auth0AccessToken) {
     if ($currentWallet) {
       gotoSign();
     } else {
-      walletService.connect();
+      walletService.connect($providerName);
     }
   }
 
@@ -43,7 +46,8 @@
       const requestAndSecret = await createAttestationRequestAndSecret(
         "mail",
         email,
-        $currentWallet
+        $currentWallet,
+        $providerName
       );
       if (requestAndSecret.result.request) {
         try {

@@ -109,11 +109,10 @@
   };
 
   onMount(async () => {
-
     document.getElementById("code0")?.focus();
     await getEmail();
     document.addEventListener("paste", pasteListener);
-    
+
     submit();
   });
 

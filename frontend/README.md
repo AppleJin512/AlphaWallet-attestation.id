@@ -84,17 +84,21 @@ The usage is simple, with two steps:
   });
 ```
 
-As for `options`, there are two optional items:
+As for `options`, there are several optional items:
 
 - force: default is `false`. When it is true, an iframe will be shown even `attestation + secret` saved in local storage. It will be useful when caller wants to reapply attestation anyway.
 - container: the id of DOM element which will be the parent of `Application Page` which is shown when no local attestation existing. This item is useful when caller wants to control the way to show it.
+- providerName: the default provider used by web3Modal, it's value needs to be consistent with the name of the provider available in web3Modal.
+- email: the default email recevied the OTP and signed the attestation. If set this option, this email will autofill into the input in the Email Page and autosend the OTP to this email.
+- debug: default is `false`. When it is true, there will a log `attestation.id postMessage data received:***` in the browser console.
+
 
 To use these options:
 
 ```js
   Attestor.onReady(function (data) {
     ...
-  }, {force: true, container: 'containerId'});
+  }, {force: true, container: 'containerId', providerName: 'providerName', email:'test@test.com', debug:true});
 ```
 
-Note: `force` and `container` are both optional.
+Note: `force` , `container` , `providerName`, `email` , `debug` are both optional.

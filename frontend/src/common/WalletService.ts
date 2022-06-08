@@ -28,9 +28,7 @@ const web3Modal = new Web3Modal({
 });
 
 if (!window.location.href.includes("access_token")) {
-  saveCurrentStep(flow.STEP_ENTER_EMAIL);
-  web3Modal.clearCachedProvider();
-  localStorage.removeItem("walletconnect");
+  reset();
 } else {
   saveCurrentStep(flow.STEP_CONFIRMATION);
 }
@@ -39,9 +37,11 @@ export async function isEnabled() {
   return web3Modal.cachedProvider;
 }
 
-export async function connect() {
+export async function connect(providerName: string) {
   try {
-    const web3ModalProvider = await web3Modal.connect();
+    const web3ModalProvider = providerName
+      ? await web3Modal.connectTo(providerName)
+      : await web3Modal.connect();
     provider = new ethers.providers.Web3Provider(web3ModalProvider);
     registerEthListener(web3ModalProvider);
     updateCurrentStatus(await provider.listAccounts());
@@ -50,9 +50,11 @@ export async function connect() {
   }
 }
 
-export async function signatureAndPublicKey(userData) {
+export async function signatureAndPublicKey(userData, providerName) {
   if (!provider) {
-    const web3ModalProvider = await web3Modal.connect();
+    const web3ModalProvider = providerName
+      ? await web3Modal.connectTo(providerName)
+      : await web3Modal.connect();
     provider = new ethers.providers.Web3Provider(web3ModalProvider);
   }
 

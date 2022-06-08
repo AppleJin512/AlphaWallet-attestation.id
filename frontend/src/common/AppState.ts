@@ -5,6 +5,7 @@ export const auth0AccessToken = writable<string>("");
 export const requestEmail = writable<string>("");
 export const sameEmail = writable<boolean>(false);
 export const currentWallet = writable<string>("");
+export const providerName = writable<string>("");
 
 const STORAGE_KEY_CURRENT_ACCOUNT = "currentAccount";
 

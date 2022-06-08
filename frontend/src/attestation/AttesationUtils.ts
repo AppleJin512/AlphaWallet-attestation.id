@@ -17,18 +17,19 @@ const attestationCrypto = new AttestationCrypto();
 export async function createAttestationRequestAndSecret(
   type: string,
   identifier: string,
-  address: string
+  address: string,
+  providerName: string
 ) {
   const secret = attestationCrypto.makeSecret();
 
   const fpoe = attestationCrypto.computeAttestationProof(
-      secret,
-      await Nonce.makeNonce(
-          address,
-          ATTESTOR_DOMAIN,
-          new Uint8Array(),
-          new Date().getTime()
-      )
+    secret,
+    await Nonce.makeNonce(
+      address,
+      ATTESTOR_DOMAIN,
+      new Uint8Array(),
+      new Date().getTime()
+    )
   );
 
   const attRequest = AttestationRequest.fromData(type === "mail" ? 1 : 0, fpoe);
@@ -40,7 +41,7 @@ export async function createAttestationRequestAndSecret(
     identifier,
   };
 
-  const result = await signatureAndPublicKey(userData);
+  const result = await signatureAndPublicKey(userData, providerName);
   return { result, secret };
 }
 
