@@ -18,6 +18,7 @@
   let email;
   let errorMsg;
   let isVerfiied = false;
+  let supportPaste = true;
 
   const submit = async function () {
     if (window.location.hash) {
@@ -109,6 +110,11 @@
   };
 
   onMount(async () => {
+    if (!(navigator.clipboard && navigator.clipboard.readText)) {
+      supportPaste = false;
+    } else {
+      supportPaste = true;
+    }
     document.getElementById("code0")?.focus();
     await getEmail();
     document.addEventListener("paste", pasteListener);
@@ -155,11 +161,16 @@
   }
 
   async function pasteListener(e) {
-    e.preventDefault();
-    const text = await navigator.clipboard.readText();
-    if (/\d{6}/.test(text)) {
-      codes = text.split("");
-      tryToEnableComfirmButton();
+    if (navigator.clipboard && navigator.clipboard.readText) {
+      supportPaste = true;
+      e.preventDefault();
+      const text = await navigator.clipboard.readText();
+      if (/\d{6}/.test(text)) {
+        codes = text.split("");
+        tryToEnableComfirmButton();
+      }
+    } else {
+      supportPaste = false;
     }
   }
 
@@ -187,7 +198,8 @@
     We sent you an attestation code to
     {email}
     <br />
-    Copy the code and paste below.
+    {#if supportPaste}Copy the code and paste below.
+    {:else}Please enter the One-time Passcode.{/if}
   </div>
 
   <div class="input-div">

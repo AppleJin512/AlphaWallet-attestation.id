@@ -42,6 +42,7 @@ function getOrCreateIFrame(container) {
     iframe = document.createElement("iframe");
     iframe.setAttribute("src", attestationSite);
     iframe.setAttribute("id", "attestationFrame");
+    iframe.setAttribute("allow", "clipboard-read;self");
     iframe.style.display = "none";
     if (container) {
       document.getElementById(container).appendChild(iframe);
