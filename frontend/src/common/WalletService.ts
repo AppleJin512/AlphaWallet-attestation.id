@@ -42,6 +42,12 @@ export async function connect(providerName: string) {
     const web3ModalProvider = providerName
       ? await web3Modal.connectTo(providerName)
       : await web3Modal.connect();
+
+    if (web3ModalProvider && web3ModalProvider._blockTracker){
+      web3ModalProvider._blockTracker._pollingInterval = 60000;
+      web3ModalProvider._blockTracker._retryTimeout = 60000;
+    }
+
     provider = new ethers.providers.Web3Provider(web3ModalProvider);
     registerEthListener(web3ModalProvider);
     updateCurrentStatus(await provider.listAccounts());

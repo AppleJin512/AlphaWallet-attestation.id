@@ -17,14 +17,14 @@ export function saveCurrentAccount(account: string) {
   localStorage.setItem(STORAGE_KEY_CURRENT_ACCOUNT, account);
 }
 
-const STORAGE_KEY_EAMIL = "email";
+const STORAGE_KEY_EMAIL = "email";
 
 export function getRawEmail() {
-  return localStorage.getItem(STORAGE_KEY_EAMIL);
+  return localStorage.getItem(STORAGE_KEY_EMAIL);
 }
 
 export function saveEmail(email: string) {
-  localStorage.setItem(STORAGE_KEY_EAMIL, email);
+  localStorage.setItem(STORAGE_KEY_EMAIL, email);
 }
 
 export async function getCurrentEmail() {

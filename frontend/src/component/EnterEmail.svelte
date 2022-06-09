@@ -94,8 +94,8 @@
       inputDisabled = "disabled";
     }
 
-    if (!attestationValid) {
-      // if input disabled then auto-click "Submit"
+    if (!(attestationValid && getRawAttestation())) {
+      // if input not disabled then auto-click "Submit"
       if (!disabled && !autoSubmitFired) {
         autoSubmitFired = true;
         onSubmit(1);

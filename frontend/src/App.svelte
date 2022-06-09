@@ -7,6 +7,7 @@
     clearAttestation,
     getCurrentEmail,
     getRawAttestation,
+    getRawCurrentAccount,
     providerName,
     requestEmail,
     sameEmail,
@@ -75,19 +76,27 @@
       $providerName = data.providerName;
     }
 
+    let address = getRawCurrentAccount();
+
     if (data.email) {
       // moved up to always set $requestEmail
       // we have to set $requestEmail because if attestation expired then we require filled email
       $requestEmail = data.email;
       const savedEmail = await getCurrentEmail();
-      if (data.email != savedEmail) {
+
+      if (data.email === savedEmail ){ $sameEmail = true; }
+      
+      if (!$sameEmail || (data.address && address && (data.address.toLowerCase() !== address.toLowerCase()))) {
         clearAttestation();
         reply({
           display: true,
         });
+
+        // refresh $requestEmail to force sumbit event
+        $requestEmail = "";
+        $requestEmail = data.email;
+        
         return;
-      } else {
-        $sameEmail = true;
       }
     }
 

@@ -21,7 +21,6 @@
   let isLoading = false;
   let canTry = false;
 
-  console.log("$providerName---", $providerName);
 
   $: if ($auth0AccessToken) {
     if ($currentWallet) {
@@ -82,10 +81,9 @@
         } catch (error) {
           isLoading = false;
           canTry = true;
-          canTry = true;
           console.error(error);
         }
-      }
+      } 
     } catch (error) {
       console.error(error);
       canTry = true;
