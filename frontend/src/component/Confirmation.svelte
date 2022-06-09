@@ -210,12 +210,20 @@
           inputmode="numeric"
           bind:value={code}
           id={`code${i}`}
-          maxlength="1"
           on:input={(event) => {
-            codes[i] = event.data;
             if (event.inputType === "insertText") {
-              focusNext(event);
+              if (
+                ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"].includes(
+                  event.data
+                )
+              ) {
+                codes[i] = event.data;
+                focusNext(event);
+              } else {
+                codes[i] = "";
+              }
             } else if (event.inputType === "deleteContentBackward") {
+              codes[i] = event.data;
               focusPrevious(event);
             }
             tryToEnableComfirmButton();
