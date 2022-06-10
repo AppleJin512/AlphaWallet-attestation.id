@@ -10,19 +10,19 @@ jobs:
   build-frontend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: env injection
         run: |
           BRANCH_NAME="${GITHUB_REF#refs/*/}"
           case "${BRANCH_NAME}" in
-          stage)
-            BASE_BACKEND_URL=https://backend-stage.attestation.id
+          prod)
+            BASE_BACKEND_URL=https://backend.attestation.id
             ;;
           *)
             BASE_BACKEND_URL=https://backend-stage.attestation.id
             ;;
           esac
-          echo "BASE_BACKEND_URL=https://backend-stage.attestation.id" >> $GITHUB_ENV
+          echo "BASE_BACKEND_URL=${BASE_BACKEND_URL}" >> $GITHUB_ENV
       - name: Make envfile
         uses: SpicyPizza/create-envfile@v1
         with:
@@ -30,10 +30,14 @@ jobs:
           envkey_RECAPTCHA_CLIENT_KEY: ${{ secrets.RECAPTCHA_CLIENT_KEY }}
           envkey_VALIDITY: 3600
           envkey_ATTESTOR: AlphaWallet
+          envkey_AUTH0_DOMAIN: auth0.attestation.id
+          envkey_AUTH0_CLIENTID: 1muawhvAEzeLRAtUz41XIjWCsdhTf4e2
           file_name: frontend/.env
-      - uses: actions/setup-node@v1
+      - uses: actions/setup-node@v3
         with:
           node-version: 14
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
       - run: |
           echo -n "Node version: "
           node -v
@@ -44,7 +48,7 @@ jobs:
           cd frontend/
           npm ci
           npm run build
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: frontend
           path: frontend/public/
@@ -52,10 +56,12 @@ jobs:
   test-frontend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
           node-version: 14
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
       - run: |
           echo -n "Node version: "
           node -v
@@ -66,7 +72,7 @@ jobs:
           cd frontend/
           npm ci
           npm run test -- --ci --colors
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: success() || failure()
         with:
           name: frontend-test-reports
@@ -83,30 +89,25 @@ jobs:
       - build-frontend
       - test-frontend
     runs-on: ubuntu-latest
-    # Only push to stage, hotfix, or main will trigger deployment
-    if: github.event_name == 'push' && (
-      github.ref == 'refs/heads/stage' ||
-      github.ref == 'refs/heads/hotfix' ||
-      github.ref == 'refs/heads/prod'
-      )
+    if: github.event_name == 'push' && github.ref == 'refs/heads/prod'
     steps:
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: frontend
           path: frontend/public/
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-southeast-1
       - name: deploy
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          TF_WORKSPACE_ID: ${{ secrets.ATTESTATION_ID_FRONTEND_WORKSPACE_ID }}
-          TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
+          S3_BUCKET: attestation-id-frontend
+          CLOUDFRONT_ID: E21GE7V99U1LOT
         run: |
-          tf_outputs_json="$(curl -s -H "Authorization: Bearer ${TF_API_TOKEN}" "https://app.terraform.io/api/v2/workspaces/${TF_WORKSPACE_ID}/current-state-version?include=outputs")"
-          backend_ec2_public_ip="$(echo "${tf_outputs_json}" | jq -r '.included[].attributes | select(.name == "backend_ec2_public_ip").value')"
-          s3_bucket_id="$(echo "${tf_outputs_json}" | jq -r '.included[].attributes | select(.name == "s3_id").value')"
-          cdn_id="$(echo "${tf_outputs_json}" | jq -r '.included[].attributes | select(.name == "cdn_id").value')"
-          aws_region="$(echo "${tf_outputs_json}" | jq -r '.included[].attributes | select(.name == "aws_region").value')"
-          aws --version
-          export AWS_DEFAULT_REGION="${aws_region}"
-          aws s3 sync frontend/public/ "s3://${s3_bucket_id}/" --cache-control 'max-age=86400' --quiet && \
-            aws cloudfront create-invalidation --distribution-id "${cdn_id}" --paths '/*'
+          aws s3 sync frontend/public/ "s3://${S3_BUCKET}/" --cache-control 'max-age=31536000' --quiet \
+          && aws s3 cp "s3://${S3_BUCKET}/index.html" "s3://${S3_BUCKET}/index.html" --cache-control 'max-age=0,s-maxage=2592000' \
+          && aws s3 cp "s3://${S3_BUCKET}/build/bundle.css" "s3://${S3_BUCKET}/build/bundle.css" --cache-control 'max-age=0,s-maxage=2592000' \
+          && aws s3 cp "s3://${S3_BUCKET}/build/bundle.js" "s3://${S3_BUCKET}/build/bundle.js" --cache-control 'max-age=0,s-maxage=2592000' \
+          && aws cloudfront create-invalidation --distribution-id "${CLOUDFRONT_ID}" --paths '/*'
