@@ -1,49 +1,98 @@
-name: 'Backend CI'
+name: "Backend CI"
 
 on:
   push:
     paths:
       - "backend/**"
+      - "plugins/**"
   pull_request:
     paths:
       - "backend/**"
+      - "plugins/**"
 
 env:
-  JAVA_VER: 11
+  JAVA_VERSION: 11
+  AWS_REGION: ap-southeast-1
+  ECR_REPOSITORY: attestation-id-backend
+  ECS_CLUSTER: attestation-id-ecs
+  TASK_DEFINITION_FAMILY: attestation-id-backend-task
+  ECS_SERVICE: attestation-id-backend-svc
+  ECS_CONTAINER: attestation-id-backend
 
 jobs:
   build-backend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up JDK ${{ env.JAVA_VER }}
-        uses: actions/setup-java@v1
+      - uses: actions/checkout@v3
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v3
         with:
-          java-version: ${{ env.JAVA_VER }}
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: "gradle"
       - name: Build with Gradle
         run: |
           java -version
           cd backend/
           ./gradlew shadowjar
-      - uses: actions/upload-artifact@v2
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
         with:
-          name: backend
-          path: backend/build/libs/backend-*all.jar
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+      - name: calc docker tags
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          BRANCH="${GITHUB_REF##*/}"
+          SHORT_SHA="${GITHUB_SHA:0:7}"
+          IMAGES="${ECR_REGISTRY}/${ECR_REPOSITORY}:${BRANCH}-${SHORT_SHA},${ECR_REGISTRY}/${ECR_REPOSITORY}:${BRANCH}"
+          if [ "${GITHUB_REF}" = 'refs/heads/main' ]; then
+            IMAGES="${IMAGES},${ECR_REGISTRY}/${ECR_REPOSITORY}:latest"
+          fi
+          echo "IMAGES=${IMAGES}" >> $GITHUB_ENV
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: ./
+          pull: true
+          push: ${{ github.event_name == 'push' && (
+            github.ref == 'refs/heads/prod' ||
+            github.ref == 'refs/heads/stage' ||
+            github.ref == 'refs/heads/main' ||
+            github.ref == 'refs/heads/ci-testing'
+            ) }}
+          tags: ${{ env.IMAGES }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   test-backend:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Set up JDK ${{ env.JAVA_VER }}
-        uses: actions/setup-java@v1
+      - uses: actions/checkout@v3
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v3
         with:
-          java-version: ${{ env.JAVA_VER }}
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: "gradle"
       - name: Check with Gradle
         run: |
           java -version
           cd backend/
           ./gradlew check
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: success() || failure()
         with:
           name: backend-test-reports
@@ -60,41 +109,42 @@ jobs:
     needs:
       - build-backend
       - test-backend
+      - docker-build
     runs-on: ubuntu-latest
-    # Only push to stage, hotfix, or main will trigger deployment
-    if: github.event_name == 'push' && (
-      github.ref == 'refs/heads/stage' ||
-      github.ref == 'refs/heads/hotfix' ||
-      github.ref == 'refs/heads/prod'
-      )
+    if: github.event_name == 'push' && github.ref == 'refs/heads/prod'
     steps:
-      - name: get ansible scripts
-        uses: actions/checkout@v2
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
         with:
-          repository: AlphaWallet/attestation.id-deployment
-          path: "attestation.id-deployment"
-          ssh-key: ${{ secrets.SSH_PRIVATE_KEY }}
-      - uses: actions/download-artifact@v2
-        with:
-          name: backend
-          path: attestation.id-deployment/backend-ansible/roles/backend/files/attestation/
-      - name: deploy
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+      - name: calc docker tags
         env:
-          TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
-          TF_WORKSPACE_ID: ${{ secrets.ATTESTATION_ID_BACKEND_WORKSPACE_ID }}
-          EC2_SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          ANSIBLE_GROUP: stage
-          ANSIBLE_HOST_KEY_CHECKING: False
-          ANSIBLE_FORCE_COLOR: True
-          ANSIBLE_PIPELINING: True
-          ANSIBLE_SSH_CONTROL_PATH: /tmp/ansible-ssh-%%h-%%p-%%r
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
-          mv -fv attestation.id-deployment/backend-ansible/roles/backend/files/attestation/backend-*all.jar \
-            attestation.id-deployment/backend-ansible/roles/backend/files/attestation/backend-all.jar
-          tf_outputs_json="$(curl -s -H "Authorization: Bearer ${TF_API_TOKEN}" "https://app.terraform.io/api/v2/workspaces/${TF_WORKSPACE_ID}/current-state-version?include=outputs")"
-          backend_ec2_public_ip="$(echo "${tf_outputs_json}" | jq -r '.included[].attributes | select(.name == "backend_ec2_public_ip").value')"
-          cd attestation.id-deployment/backend-ansible/
-          eval $(ssh-agent -s)
-          echo "${EC2_SSH_PRIVATE_KEY}" | ssh-add -
-          sed -i "/\[${ANSIBLE_GROUP}\]/ a ${backend_ec2_public_ip}" hosts
-          ansible-playbook -i hosts -l "${ANSIBLE_GROUP}" site.yml
+          BRANCH="${GITHUB_REF##*/}"
+          SHORT_SHA="${GITHUB_SHA:0:7}"
+          IMAGE="${ECR_REGISTRY}/${ECR_REPOSITORY}:${BRANCH}-${SHORT_SHA}"
+          echo "IMAGE=${IMAGE}" >> $GITHUB_ENV
+      - name: Download task definition
+        run: |
+          aws ecs describe-task-definition --task-definition "${TASK_DEFINITION_FAMILY}" --query taskDefinition > task-definition.json
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: ${{ env.ECS_CONTAINER }}
+          image: ${{ env.IMAGE }}
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
+          wait-for-minutes: 5
