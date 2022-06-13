@@ -2,7 +2,7 @@ package id.attestation.utils;
 
 import id.attestation.data.AttestationWebResponse;
 import id.attestation.data.PublicAttestationWebResponse;
-import id.attestation.exception.EncryptOtpFailedException;
+import id.attestation.exception.EncryptDataFailedException;
 import id.attestation.exception.IllegalAttestationRequestException;
 import id.attestation.exception.PublicKeyCreationException;
 import io.alchemynft.attestation.NFTAttestation;
@@ -89,8 +89,8 @@ public class CryptoUtils {
         } catch (PublicKeyCreationException e) {
             throw e;
         } catch (Exception e) {
-            LOGGER.error("Can't encrypt otp({}) with key {}, caused by: {}", data, publicKey, e);
-            throw new EncryptOtpFailedException("Cannot generate an encrypted otp.");
+            LOGGER.error("Can't encrypt data({}) with key {}, caused by: {}", data, publicKey, e);
+            throw new EncryptDataFailedException("Cannot generate an encrypted otp.");
         }
     }
 

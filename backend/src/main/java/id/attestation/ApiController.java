@@ -4,21 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import id.attestation.data.*;
 import id.attestation.exception.IllegalAttestationRequestException;
-import id.attestation.exception.NoRecapthaResponseException;
-import id.attestation.exception.RecaptchaVerifyFailedException;
 import id.attestation.service.auth.AuthenticationService;
-import id.attestation.service.email.EmailData;
-import id.attestation.service.email.EmailService;
-import id.attestation.service.email.EmailTemplate;
 import id.attestation.service.plugin.AuthenticationServiceManager;
 import id.attestation.service.plugin.PluginService;
-import id.attestation.service.recaptcha.RecaptchaService;
 import id.attestation.utils.CryptoUtils;
-import id.attestation.utils.IdentifierExtractor;
-import id.attestation.utils.MagicLinkParser;
 import io.micronaut.context.annotation.Value;
-import io.micronaut.core.annotation.Nullable;
-import io.micronaut.core.util.StringUtils;
 import io.micronaut.http.HttpHeaders;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MediaType;
@@ -30,7 +20,6 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.util.encoders.DecoderException;
 import org.bouncycastle.util.encoders.Hex;
 import org.devcon.ticket.Ticket;
-import org.devcon.ticket.TicketDecoder;
 import org.pf4j.PluginWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,12 +28,9 @@ import org.tokenscript.attestation.IdentifierAttestation.AttestationType;
 import org.tokenscript.attestation.ValidationTools;
 import org.tokenscript.attestation.core.AttestationCrypto;
 import org.tokenscript.attestation.core.DERUtility;
-import org.tokenscript.attestation.core.URLUtility;
 import org.tokenscript.attestation.eip712.Eip712AttestationRequest;
-import reactor.core.publisher.Mono;
 
 import javax.validation.Valid;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -59,12 +45,7 @@ public class ApiController {
     private static final Logger LOGGER = LoggerFactory.getLogger(ApiController.class);
     public static final String ATTESTOR_DOMAIN = "http://wwww.attestation.id";
 
-    private final EmailService emailService;
-    private final RecaptchaService recaptchaService;
-    private final String recaptchaKey;
     private final AsymmetricCipherKeyPair keys;
-    private final String devconPubkeyHex;
-    private TicketDecoder ticketDecoder;
 
     @Inject
     private AuthenticationServiceManager authenticationServiceManager;
@@ -72,33 +53,11 @@ public class ApiController {
     @Inject
     private PluginService pluginService;
 
-    public ApiController(@Value("${RECAPTCHA_KEY:none}") String recaptchaKey
-            , @Value("${ATTESTOR_PRIVATE_KEY:none}") String attestorPrivateKey
-            , @Value("${DEVCON_PUBLIC_KEY:none}") String devconPubkeyHex
-            , EmailService emailService
-            , RecaptchaService recaptchaService
-    ) {
-        this.recaptchaKey = recaptchaKey;
-        this.emailService = emailService;
-        this.recaptchaService = recaptchaService;
+    public ApiController(@Value("${ATTESTOR_PRIVATE_KEY:none}") String attestorPrivateKey) {
         // The string list expected by DERUtility.restoreBase64Keys should have the following format:
         // [prefix, content, postfix]
         // Only content is needed.
         this.keys = DERUtility.restoreBase64Keys(Arrays.asList("", attestorPrivateKey, ""));
-        this.devconPubkeyHex = devconPubkeyHex;
-    }
-
-    @Consumes({MediaType.APPLICATION_FORM_URLENCODED, MediaType.APPLICATION_JSON})
-    @Post("/otp")
-    @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<OtpResponse> sendOTP(@Body @Valid OtpRequest request, @Body("g-recaptcha-response") String recaptchaResponse) {
-        verifyRecapthca(recaptchaResponse);
-        String otp = CryptoUtils.generateOtp();
-        OtpResponse response = new OtpResponse(CryptoUtils.encryptWithRSAOAEP(request.getPublicKey(), otp));
-        if ("mail".equalsIgnoreCase(request.getType())) {
-            emailService.send(new EmailData(request.getValue(), "Your OTP for Attestation Request", EmailTemplate.createEmailBody(otp)));
-        }
-        return HttpResponse.created(response);
     }
 
     /**
@@ -128,19 +87,6 @@ public class ApiController {
         Map<String, List<String>> filteredHeaders = authenticationServiceManager.filterRequiredHeaders(headers);
         if (!authenticationService.verifyEmail(filteredHeaders, email)) {
             throw new IllegalAttestationRequestException("email could not be verified.");
-        }
-        Eip712AttestationRequest attestationRequest = createAttestRequest(request);
-        return HttpResponse.created(CryptoUtils.constructAttest(request.getValidity(), request.getAttestor(), attestationRequest, keys));
-    }
-
-    @Post("/attestation/magic-link")
-    @ExecuteOn(TaskExecutors.IO)
-    public HttpResponse<AttestationWebResponse> createMagicLinkAttestation(@Body @Valid MagicLinkAttestationWebRequest request) {
-        MagicLink magicLink = MagicLinkParser.parse(request.getMagicLink());
-        Ticket ticket = decodeTicket(magicLink.getEncodedTicket());
-        String email = IdentifierExtractor.extract(request.getPublicRequest());
-        if (isEmailDifferent(email, magicLink.getSecret(), ticket)) {
-            throw new IllegalAttestationRequestException("Email is different from that in ticket commitment");
         }
         Eip712AttestationRequest attestationRequest = createAttestRequest(request);
         return HttpResponse.created(CryptoUtils.constructAttest(request.getValidity(), request.getAttestor(), attestationRequest, keys));
@@ -247,52 +193,12 @@ public class ApiController {
         }
     }
 
-    private boolean verifyRecapthca(String recaptchaResponse) {
-        if (StringUtils.isEmpty(recaptchaResponse)) {
-            throw new NoRecapthaResponseException("Missing client recaptcha response.");
-        }
-
-        try {
-            Map<String, ?> result = Mono.from(recaptchaService.verify(recaptchaKey, recaptchaResponse)).block();
-            if (result != null && (Boolean) result.get("success")) {
-                LOGGER.info("***** reCaptcha verified successfully *****");
-                return true;
-            } else {
-                @SuppressWarnings("unchecked")
-                String errorCodes = String.join(",", ((List<String>) result.get("error-codes")));
-                LOGGER.error("Recaptcha verify failed, caused by: {}",
-                        errorCodes);
-                throw new RecaptchaVerifyFailedException(
-                        "Recaptcha verify failed, cause:" + errorCodes);
-            }
-        } catch (NullPointerException e) {
-            throw new RecaptchaVerifyFailedException(
-                    "Recaptcha verify failed: Could not retrieve recaptcha result");
-        }
-    }
-
     private boolean isHex(String value) {
         try {
             Hex.decodeStrict(value);
             return true;
         } catch (DecoderException var2) {
             return false;
-        }
-    }
-
-    private Ticket decodeTicket(String encodedTicket) {
-        if (ticketDecoder == null) {
-            ticketDecoder = new TicketDecoder(CryptoUtils.getECPublicKeyParameters(devconPubkeyHex));
-        }
-        try {
-            Ticket ticket = ticketDecoder.decode(URLUtility.decodeData(encodedTicket));
-            if (!ticket.verify() || !ticket.checkValidity()) {
-                throw new IllegalAttestationRequestException("Could decode a valid or verifiable ticket");
-            }
-            return ticket;
-        } catch (IOException e) {
-            LOGGER.error("failed to decode the ticket, caused by: {}", e.getMessage());
-            throw new IllegalAttestationRequestException("failed to decode ticket, cause: " + e.getMessage());
         }
     }
 

@@ -1,6 +1,6 @@
 package id.attestation.utils
 
-import id.attestation.data.MagicLink
+
 import id.attestation.data.NftParam
 
 import javax.crypto.Cipher
@@ -42,10 +42,6 @@ class TestUtils {
     static String signatureForCosigned = "0xc2e4c07b65cc59971297be38da3f7a409bdbb38e293eb23aa0d6827c27839acf7bd46f01f50e5fe46f0a878782a6809c86654eb5deabd828c656004d3b6bc38c1c"
 
     static String ecPubkeyHex = "950C7C0BED23C3CAC5CC31BBB9AAD9BB5532387882670AC2B1CDF0799AB0EBC764C267F704E8FDDA0796AB8397A4D2101024D24C4EFFF695B3A417F2ED0E48CD"
-    static String magicLinkPublicRequest = "{\"signatureInHex\":\"0xaf25ca3238aff0bb87d4bb45c540dc3217c3e21daec1516e9d7f10c98b76615716d57449ad49e0a9896ed6108248e78ad4bfa194b52c625e36def0033001243d1c\",\"jsonSigned\":\"{\\\"types\\\":{\\\"EIP712Domain\\\":[{\\\"name\\\":\\\"name\\\",\\\"type\\\":\\\"string\\\"},{\\\"name\\\":\\\"version\\\",\\\"type\\\":\\\"string\\\"}],\\\"AttestationRequest\\\":[{\\\"name\\\":\\\"payload\\\",\\\"type\\\":\\\"string\\\"},{\\\"name\\\":\\\"description\\\",\\\"type\\\":\\\"string\\\"},{\\\"name\\\":\\\"timestamp\\\",\\\"type\\\":\\\"string\\\"},{\\\"name\\\":\\\"identifier\\\",\\\"type\\\":\\\"string\\\"}]},\\\"primaryType\\\":\\\"AttestationRequest\\\",\\\"message\\\":{\\\"payload\\\":\\\"MIIBAgIBATCB_ARBBBjwEjzQbGrtOsseGCN5GpHHq6lohY4zJLCpwfuE6bODF_8u8_61Oe3b--sqEw8KY3UDF3NX2UnsJ33-XGiLo80EICo_Vkjt-Y8sO_F-9Ym1kYR452HLiPOpY2qWYbpVjh8RBEEEFcyHNLEE0p5iKOA_v7MRU7rZ6H6g_Pt-rJpSCWx8EskQG3hB2vLzg4YbujGUjm2mZROwwPcCkirKcX3eNnmFggRSMFgxNkYxQ0RGNTIwMEQ3QUU3RjA3QzE1MjJGMTkwNTJBNzIyRDkzOTcwqZU50y9kqXbiNUmNpswjqJjyXO1uD4eQiw8qoNwfgHwAAAF5RuJFWA\\\",\\\"description\\\":\\\"Linking Ethereum address to phone or email\\\",\\\"timestamp\\\":\\\"Fri Jun 21 2021 22:51:44 GMT+0800\\\",\\\"identifier\\\":\\\"mah@mah.com\\\"},\\\"domain\\\":{\\\"name\\\":\\\"http://wwww.attestation.id\\\",\\\"version\\\":\\\"0.1\\\"}}\"}";
-    static String magicLink = "https://ticket.devcon.org/?ticket=MIGWMA0MATYCBWE3ap3-AgEABEEEKJZVxMEXbkSZZBWnNUTX_5ieu8GUqf0bx_a0tBPF6QYskABaMJBYhDOXsmQt3csk_TfMZ2wdmfRkK7ePCOI2kgNCAOOZKRpcE6tLBuPbfE_SmwPk2wNjbj5vpa6kkD7eqQXvBOCa0WNo8dEHKvipeUGZZEWWjJKxooB44dEYdQO70Vgc&secret=45845870684"
-    static MagicLink magicLinkObj = new MagicLink("ticket.devcon.org", "MIGWMA0MATYCBWE3ap3-AgEABEEEKJZVxMEXbkSZZBWnNUTX_5ieu8GUqf0bx_a0tBPF6QYskABaMJBYhDOXsmQt3csk_TfMZ2wdmfRkK7ePCOI2kgNCAOOZKRpcE6tLBuPbfE_SmwPk2wNjbj5vpa6kkD7eqQXvBOCa0WNo8dEHKvipeUGZZEWWjJKxooB44dEYdQO70Vgc", new BigInteger("45845870684"))
-    static String badMagicLink = "https://ticket.devcon.org/?ticket=MIGWMA0MATYCBWE3ap3-AgEABEEEKJZVxMEXbkSZZBWnNUTX_5ieu8GUqf0bx_a0tBPF6QYskABaMJBYhDOXsmQt3csk_TfMZ2wdmfRkK7ePCOI2kgNCAOOZKRpcE6tLBuPbfE_SmwPk2wNjbj5vpa6kkD7eqQXvBOCa0WNo8dEHKvipeUGZZEWWjJKxooB44dEYdQO70Vgc"
 
     static PrivateKey getPrivateKey(String privateKey) {
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(Base64.decoder.decode(privateKey))

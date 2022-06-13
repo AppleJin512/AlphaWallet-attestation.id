@@ -11,7 +11,6 @@ Before running or building this project, enviorment variables needed by project 
   - BASE_BACKEND_URL, the backend of this project
   - VALIDITY, validity of attestation, unit is `second`
   - ATTESTOR, issuer of attestation
-  - RECAPTCHA_CLIENT_KEY, Google reCAPTCHA cliet secret
 
 Here is an example of `.env`:
 
@@ -19,7 +18,6 @@ Here is an example of `.env`:
 BASE_BACKEND_URL=https://backend-stage.attestation.id
 VALIDITY=3600
 ATTESTOR=AlphaWallet
-RECAPTCHA_CLIENT_KEY=6LczehUaAAAAAKNFpekERYt7lUga7dNKy0QZG34l
 ```
 
 Note: the key above is for testing only.
@@ -91,7 +89,6 @@ As for `options`, there are several optional items:
 - providerName: the default provider used by web3Modal, it's value needs to be consistent with the name of the provider available in web3Modal.
 - email: the default email recevied the OTP and signed the attestation. If set this option, this email will autofill into the input in the Email Page and autosend the OTP to this email.
 - debug: default is `false`. When it is true, there will a log `attestation.id postMessage data received:***` in the browser console.
-
 
 To use these options:
 

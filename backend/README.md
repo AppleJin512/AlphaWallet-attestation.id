@@ -45,37 +45,6 @@ java -Dmicronaut.environments=openapi -jar backend-<version>-all.jar
 
 ## Restful API
 
-### Get an OTP
-
-- method: POST
-- url: /api/otp
-- request: json format / form submission
-  - type: mail or phone
-  - value: value of request
-  - publicKey: public key of requestor
-  - g-recaptcha-response: client response from Google reCAPTCHA
-- response: json format
-  - otpEncrypted: the OTP encrypted by public key of requestor.
-
-Example:
-
-```shell
-curl -X POST -H 'Content-Type: application/json' -i http://localhost:8080/otp --data '{ "type": "mail", "value": "test@mail.com", "publicKey": "...", "g-recaptcha-response": "..." }'
-```
-
-For public key, it is based on Web Crypt API, using RSA-OAEP with the following configuration:
-
-```typescript
-{
-  name: "RSA-OAEP",
-  modulusLength: 2048,
-  publicExponent: new Uint8Array([0x01, 0x00, 0x01]),
-  hash: { name: "SHA-256" },
-}
-```
-
-Find more details, please check [cryptoUtils.ts in frontend project](../frontend/src/common/cryptoUtils.ts).
-
 ### Ask for an attestation
 
 - method: POST
@@ -98,29 +67,6 @@ curl -X POST -H 'Content-Type: application/json' -H 'x-pap-ac: your_access_token
 "validity": 3600,
 "attestor": "AlphaWallet",
 "publicRequest": "{"signatureInHex":"0x72702adf76437214fa88c4880df06d1456d17dc9ebeab58fc75088c2573f1f114bf23359ff8be40dd76b170186229c1007d020a97bf48c30f23eeffb2bb79a121c","jsonSigned":"{\"types\":{\"EIP712Domain\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"}],\"AttestationRequest\":[{\"name\":\"payload\",\"type\":\"string\"},{\"name\":\"description\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"string\"},{\"name\":\"identifier\",\"type\":\"string\"}]},\"primaryType\":\"AttestationRequest\",\"message\":{\"payload\":\"MIIBAgIBATCB_ARBBAmgnnZ6GqlmptON7vUlSzS1BiwkBq0FvyWHUvVaIrFHEhOuGkVN_w58auM_of7djTXgyDJ6_0Riy_vFOeQwusYEICUamcA97wgkmMxQGEByASCu-b31vz4bd8QxigAJBq1BBEEEKgWKKy5kkOXxDtO1T3nfnSDlPxsBexeQR8eQ4jcmKcMq6YdrXk3vl0wqEznyiSTLTuhiIuBBU0X17FGKxb-TEQRSMFgxNkYxQ0RGNTIwMEQ3QUU3RjA3QzE1MjJGMTkwNTJBNzIyRDkzOTcwqZU50y9kqXbiNUmNpswjqJjyXO1uD4eQiw8qoNwfgHwAAAF5NpzQjg\",\"description\":\"Linking Ethereum address to phone or email\",\"timestamp\":\"Tue May 04 2021 17:01:57 GMT+0800\",\"identifier\":\"jianhgreat@hotmail.com\"},\"domain\":{\"name\":\"http://wwww.attestation.id\",\"version\":\"0.1\"}}"}"}'
-```
-
-### Ask for a MagicLink attestation
-
-- method: POST
-- url: /api/attestation/magic-link
-- request: json format
-  - validity: how many seconds the attestation should be valid
-  - attestor: name of attestor
-  - publicRequest: request data
-  - magicLink: the magic link
-- response: json format
-  - attestation: attestation value, BASE64-Encoded string
-  - attestorPublicKey: public key of the attestor, BASE64-Encoded string
-
-Example:
-
-```shell
-curl -X POST -H 'Content-Type: application/json' -i http://localhost:8080/api/attestation/magic-link --data '{
-"validity": 3600,
-"attestor": "AlphaWallet",
-"publicRequest": "{"signatureInHex":"0x72702adf76437214fa88c4880df06d1456d17dc9ebeab58fc75088c2573f1f114bf23359ff8be40dd76b170186229c1007d020a97bf48c30f23eeffb2bb79a121c","jsonSigned":"{\"types\":{\"EIP712Domain\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"}],\"AttestationRequest\":[{\"name\":\"payload\",\"type\":\"string\"},{\"name\":\"description\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"string\"},{\"name\":\"identifier\",\"type\":\"string\"}]},\"primaryType\":\"AttestationRequest\",\"message\":{\"payload\":\"MIIBAgIBATCB_ARBBAmgnnZ6GqlmptON7vUlSzS1BiwkBq0FvyWHUvVaIrFHEhOuGkVN_w58auM_of7djTXgyDJ6_0Riy_vFOeQwusYEICUamcA97wgkmMxQGEByASCu-b31vz4bd8QxigAJBq1BBEEEKgWKKy5kkOXxDtO1T3nfnSDlPxsBexeQR8eQ4jcmKcMq6YdrXk3vl0wqEznyiSTLTuhiIuBBU0X17FGKxb-TEQRSMFgxNkYxQ0RGNTIwMEQ3QUU3RjA3QzE1MjJGMTkwNTJBNzIyRDkzOTcwqZU50y9kqXbiNUmNpswjqJjyXO1uD4eQiw8qoNwfgHwAAAF5NpzQjg\",\"description\":\"Linking Ethereum address to phone or email\",\"timestamp\":\"Tue May 04 2021 17:01:57 GMT+0800\",\"identifier\":\"jianhgreat@hotmail.com\"},\"domain\":{\"name\":\"http://wwww.attestation.id\",\"version\":\"0.1\"}}"}",
-"magicLink": "https://ticket.devcon.org/?ticket=MIGWMA0MATYCBWE3ap3-AgEABEEEKJZVxMEXbkSZZBWnNUTX_5ieu8GUqf0bx_a0tBPF6QYskABaMJBYhDOXsmQt3csk_TfMZ2wdmfRkK7ePCOI2kgNCAOOZKRpcE6tLBuPbfE_SmwPk2wNjbj5vpa6kkD7eqQXvBOCa0WNo8dEHKvipeUGZZEWWjJKxooB44dEYdQO70Vgc&secret=45845870684"}'
 ```
 
 ### Ask for a Public attestation
@@ -228,12 +174,6 @@ Be sure JDK 11 is installed on your computer before running.
   export LOG_LEVEL=INFO
   ```
 
-- Google reCaptcha (NOTE: **THIS IS FOR TESTING ONLY**):
-
-  ```shell
-  export RECAPTCHA_KEY=XXXX
-  ```
-
 - EMail Service
 
   - option 1, AWS SES
@@ -265,12 +205,6 @@ Be sure JDK 11 is installed on your computer before running.
 
   ```shell
   export ATTESTOR_PRIVATE_KEY=MIICSwIBADCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBBIIBVTCCAVECAQEEIP0NZmYQRZgBrndcBR6RUJdEfBaQoF+/yUNQHpEM7s7GoIHjMIHgAgEBMCwGByqGSM49AQECIQD////////////////////////////////////+///8LzBEBCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAcEQQR5vmZ++dy7rFWgYpXOhwsHApv82y3OKNlZ8oFbFvgXmEg62ncmo8RlXaT7/A4RCKj9F7RIpoVUGZxH0I/7ENS4AiEA/////////////////////rqu3OavSKA7v9JejNA2QUECAQGhRANCAASs39hcmVWwLtOaxxgp26vuszAncsReQC1Rjb6K7IixLQESpfQ1cNaqivTzDYTgzz1cQ4GswxUvF7HOHaqL0gyP
-  ```
-
-- Devcon Public Key (NOTE: **THIS IS FOR TESTING ONLY**), this is a 64 byte EC public key in hex
-
-  ```shell
-  export DEVCON_PUBLIC_KEY=950C7C0BED23C3CAC5CC31BBB9AAD9BB5532387882670AC2B1CDF0799AB0EBC764C267F704E8FDDA0796AB8397A4D2101024D24C4EFFF695B3A417F2ED0E48CD
   ```
 
 - Logs to AWS CloudWatch
@@ -318,7 +252,7 @@ For other subcommands, replace the `server` with the subcommand to be run.
 
 ### Run testing
 
-For testing, run with (NOTE: with a clean env, except for the DEVCON_PUBLIC_KEY):
+For testing, run with (NOTE: with a clean env):
 
 ```shell
 ./gradlew test
@@ -335,9 +269,6 @@ This will run backend with all plugins locally. You must declare all required en
 E.g:
 
 ```sh
-# required by backend
-export RECAPTCHA_KEY=XXXX ATTESTOR_PRIVATE_KEY=xxx DEVCON_PUBLIC_KEY=xxx RECAPTCHA_KEY=xxxx SENDGRID_APIKEY=xxxxx SENDGRID_FROM_EMAIL=xxxxx
-
 # required by auth0 plugin
 export AUTH0_DOMAIN=xxx AUTH0_CLIENT_ID=xxx AUTH0_CLIENT_SECRET=xxx
 
@@ -363,9 +294,6 @@ The fatjar can be found in `build/libs/`.
 
 ## References
 
-- Google reCAPTCHA Docs
-  - [Client: Invisible reCAPTCHA](https://developers.google.com/recaptcha/docs/invisible)
-  - [Server: Verifying the user's response](https://developers.google.com/recaptcha/docs/verify)
 - [Send Emails from Micronaut](https://guides.micronaut.io/micronaut-email/guide/index.html)
 - [Error Handling](https://guides.micronaut.io/micronaut-error-handling/guide/index.html)
 - [Micronaut Test - Testing with Spock](https://micronaut-projects.github.io/micronaut-test/latest/guide/#spock)
