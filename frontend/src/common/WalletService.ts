@@ -1,12 +1,15 @@
-import WalletConnectProvider from "@walletconnect/web3-provider";
-import { ethers } from "ethers";
-import { _TypedDataEncoder } from "ethers/lib/utils";
 import { keccak256 } from "js-sha3";
-import Web3Modal from "web3modal";
 
 import * as flow from "../common/Flow";
 import { currentWallet, saveCurrentAccount } from "./AppState";
 import { current, saveCurrentStep } from "./Flow";
+
+declare let window: any;
+
+const Web3Modal = window.Web3Modal.default;
+const ethers = window.ethers;
+const WalletConnectProvider = window.WalletConnectProvider.default;
+const _TypedDataEncoder = ethers.utils._TypedDataEncoder;
 
 let provider: ethers.providers.Web3Provider;
 
@@ -43,7 +46,7 @@ export async function connect(providerName: string) {
       ? await web3Modal.connectTo(providerName)
       : await web3Modal.connect();
 
-    if (web3ModalProvider && web3ModalProvider._blockTracker){
+    if (web3ModalProvider && web3ModalProvider._blockTracker) {
       web3ModalProvider._blockTracker._pollingInterval = 60000;
       web3ModalProvider._blockTracker._retryTimeout = 60000;
     }
