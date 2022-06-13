@@ -106,6 +106,7 @@ button {
   text-align: center;
   color: #ffffff;
   border: none;
+  cursor: pointer;
 }
 
 main {

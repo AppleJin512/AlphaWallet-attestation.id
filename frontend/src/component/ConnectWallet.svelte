@@ -13,6 +13,7 @@
   import { createAttestationRequestAndSecret } from "../attestation/AttesationUtils";
   import * as cryptoUtils from "../common/CryptoUtils";
   import { bigintToHex } from "bigint-conversion";
+  import { onMount } from "svelte";
 
   const BASE_BACKEND_URL = __myapp.env.BASE_BACKEND_URL;
   const VALIDITY = __myapp.env.VALIDITY;
@@ -20,7 +21,7 @@
 
   let isLoading = false;
   let canTry = false;
-
+  let showBtn = false;
 
   $: if ($auth0AccessToken) {
     if ($currentWallet) {
@@ -83,13 +84,23 @@
           canTry = true;
           console.error(error);
         }
-      } 
+      }
     } catch (error) {
       console.error(error);
       canTry = true;
       isLoading = false;
     }
   };
+
+  function connectWalletClick() {
+    walletService.connect($providerName);
+  }
+
+  onMount(async () => {
+    setTimeout(() => {
+      showBtn = true;
+    }, 2000);
+  });
 </script>
 
 {#if isLoading}
@@ -100,6 +111,10 @@
 {:else if canTry}
   <div class="retry-desc">Something wrong, please try again.</div>
   <button on:click={gotoSign} class="retry">Try again</button>
+{:else if showBtn}
+  <button class="connect" on:click={connectWalletClick}
+    >Connect to Wallet</button
+  >
 {/if}
 
 <style>
@@ -124,5 +139,10 @@
     border-bottom: 3px solid transparent;
     margin-left: auto;
     margin-right: auto;
+  }
+
+  .connect {
+    width: 40%;
+    margin-top: calc((100vh - 400px) / 2);
   }
 </style>
