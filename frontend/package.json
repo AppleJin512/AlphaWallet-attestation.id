@@ -46,7 +46,6 @@
     "@walletconnect/web3-provider": "1.7.1",
     "auth0-js": "^9.19.0",
     "bigint-conversion": "^2.1.12",
-    "js-sha3": "^0.8.0",
     "sirv-cli": "^1.0.0"
   },
   "jest": {

@@ -1,5 +1,3 @@
-import { keccak256 } from "js-sha3";
-
 import * as flow from "../common/Flow";
 import { currentWallet, saveCurrentAccount } from "./AppState";
 import { current, saveCurrentStep } from "./Flow";
@@ -8,6 +6,7 @@ declare let window: any;
 
 const Web3Modal = window.Web3Modal.default;
 const ethers = window.ethers;
+const keccak256 = window.keccak256;
 const WalletConnectProvider = window.WalletConnectProvider.default;
 const _TypedDataEncoder = ethers.utils._TypedDataEncoder;
 
