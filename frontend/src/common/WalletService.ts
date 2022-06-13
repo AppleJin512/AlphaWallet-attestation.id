@@ -11,7 +11,7 @@ const ethers = window.ethers;
 const WalletConnectProvider = window.WalletConnectProvider.default;
 const _TypedDataEncoder = ethers.utils._TypedDataEncoder;
 
-let provider: ethers.providers.Web3Provider;
+let provider: any;
 
 const ATTESTOR_DOMAIN = "http://wwww.attestation.id";
 
