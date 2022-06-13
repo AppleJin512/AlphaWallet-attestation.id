@@ -28,7 +28,7 @@ jobs:
         with:
           envkey_BASE_BACKEND_URL: ${{ env.BASE_BACKEND_URL }}
           envkey_RECAPTCHA_CLIENT_KEY: ${{ secrets.RECAPTCHA_CLIENT_KEY }}
-          envkey_VALIDITY: 3600
+          envkey_VALIDITY: 2592000
           envkey_ATTESTOR: AlphaWallet
           envkey_AUTH0_DOMAIN: auth0.attestation.id
           envkey_AUTH0_CLIENTID: 1muawhvAEzeLRAtUz41XIjWCsdhTf4e2
