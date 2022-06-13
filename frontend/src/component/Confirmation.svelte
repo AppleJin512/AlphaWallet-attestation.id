@@ -29,14 +29,19 @@
         if (err) {
           console.log(err);
           errorMsg = err.message || err.errorDescription;
-          history.replaceState({}, "", "/");
+          if (history.replaceState) {
+            history.replaceState({}, "", "/");
+          }
         } else {
           if (authResult) {
             try {
               isVerfiied = true;
               $auth0AccessToken = authResult.accessToken;
 
-              history.replaceState({}, "", "/");
+              if (history.replaceState) {
+                history.replaceState({}, "", "/");
+              }
+
               flow.saveCurrentStep(flow.STEP_CONNECT_WALLET);
             } catch (error) {
               errorMsg = errorMsgPipe(error.message);
