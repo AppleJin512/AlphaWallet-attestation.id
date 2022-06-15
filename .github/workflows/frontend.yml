@@ -20,6 +20,9 @@ jobs:
           prod)
             BASE_BACKEND_URL=https://backend.attestation.id
             ;;
+          test)
+            BASE_BACKEND_URL=https://backend-test.attestation.id
+            ;;
           *)
             BASE_BACKEND_URL=https://backend-stage.attestation.id
             ;;
@@ -91,7 +94,9 @@ jobs:
       - build-frontend
       # - test-frontend
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/prod'
+    if: github.event_name == 'push' && (
+      github.ref == 'refs/heads/prod' ||
+      github.ref == 'refs/heads/test')
     steps:
       - uses: actions/download-artifact@v3
         with:
@@ -103,10 +108,18 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-southeast-1
+      - name: inject env based on branch
+        run: |
+          if [ "${GITHUB_REF}" = prod ]; then
+            S3_BUCKET=attestation-id-frontend
+            CLOUDFRONT_ID=E21GE7V99U1LOT
+          else
+            S3_BUCKET=attestation-id-frontend-test
+            CLOUDFRONT_ID=E2OMBEMU3MTR8V
+          fi
+          echo "S3_BUCKET=${S3_BUCKET}" >> $GITHUB_ENV
+          echo "CLOUDFRONT_ID=${CLOUDFRONT_ID}" >> $GITHUB_ENV
       - name: deploy
-        env:
-          S3_BUCKET: attestation-id-frontend
-          CLOUDFRONT_ID: E21GE7V99U1LOT
         run: |
           aws s3 sync frontend/public/ "s3://${S3_BUCKET}/" --cache-control 'max-age=31536000' --quiet \
           && aws s3 cp "s3://${S3_BUCKET}/index.html" "s3://${S3_BUCKET}/index.html" --cache-control 'max-age=0,s-maxage=2592000' \
