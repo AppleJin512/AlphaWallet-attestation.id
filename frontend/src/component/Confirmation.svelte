@@ -184,7 +184,7 @@
     if (navigator.clipboard && navigator.clipboard.readText) {
       supportPaste = true;
       e.preventDefault();
-      const text = await navigator.clipboard.readText();
+      const text = (await navigator.clipboard.readText()).trim().slice(0, 6);
       if (/\d{6}/.test(text)) {
         codes = text.split("");
         tryToEnableComfirmButton();
