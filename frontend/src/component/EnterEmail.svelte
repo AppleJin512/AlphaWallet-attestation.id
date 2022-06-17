@@ -75,6 +75,7 @@
 
   onMount(async () => {
     validateEmail(email);
+    document.addEventListener("paste", pasteListener);
 
     let attestation = getRawAttestation();
     let parsedAttestation;
@@ -85,6 +86,14 @@
       }
     }
   });
+
+  async function pasteListener(e) {
+    if (navigator.clipboard && navigator.clipboard.readText) {
+      e.preventDefault();
+      email = (await navigator.clipboard.readText()).trim();
+      validateEmail(email);
+    }
+  }
 
   $: if ($requestEmail && inIframe) {
     email = $requestEmail;
@@ -121,6 +130,7 @@
     value={email}
     disabled={inputDisabled}
     on:keyup={({ target: { value } }) => validateEmail(value)}
+    on:paste={({ target: { value } }) => validateEmail(value)}
   />
 
   <button on:click={onSubmit} id="submitBtn" {disabled}>
