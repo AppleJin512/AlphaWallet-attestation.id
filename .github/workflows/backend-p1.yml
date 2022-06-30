@@ -1,0 +1,57 @@
+name: "backend-p1"
+
+on:
+  workflow_call:
+  workflow_dispatch:
+    inputs:
+      attestation_ver:
+        description: "Specific org.tokenscript:attestation version"
+        required: false
+        type: string
+      use_github_packages:
+        description: "Whether to use github packages for building"
+        required: false
+        default: false
+        type: boolean
+
+env:
+  JAVA_VERSION: 11
+
+jobs:
+  backend-p1:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: "gradle"
+      - name: Build
+        run: |
+          java -version
+          if [ -n "${ATTESTATION_VER}" ]; then
+            sed -i "s/(['\"]org.tokenscript:attestation:.*['\"])/('org.tokenscript:attestation:${ATTESTATION_VER}')/" backend/build.gradle
+          fi
+          if [ "${USE_GITHUB_PACKAGES}" = "true" ]; then
+            sed -i "/mavenCentral()/a \    maven {\n        url 'https://maven.pkg.github.com/TokenScript/attestation'\n        credentials {\n            username = project.findProperty('gpr.user') ?: System.getenv('GPR_USER')\n            password = project.findProperty('gpr.key') ?: System.getenv('GPR_KEY')\n        }\n    }" backend/build.gradle
+          fi
+          cat backend/build.gradle
+          backend/gradlew --no-daemon clean build
+        env:
+          ATTESTATION_VER: ${{ inputs.attestation_ver }}
+          USE_GITHUB_PACKAGES: ${{ inputs.use_github_packages }}
+          GPR_USER: ${{ secrets.GPR_USER }}
+          GPR_KEY: ${{ secrets.GPR_KEY }}
+      - uses: actions/upload-artifact@v3
+        with:
+          name: backend
+          path: |
+            backend/build/libs/
+            plugins/*-plugin/build/libs/
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        if: success() || failure()
+        with:
+          files: "**/test-results/**/*.xml"

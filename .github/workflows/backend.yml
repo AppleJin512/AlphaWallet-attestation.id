@@ -11,7 +11,6 @@ on:
       - "plugins/**"
 
 env:
-  JAVA_VERSION: 11
   AWS_REGION: ap-southeast-1
   ECR_REPOSITORY: attestation-id-backend
   ECS_CLUSTER: attestation-id-ecs
@@ -20,26 +19,8 @@ env:
   ECS_CONTAINER: attestation-id-backend
 
 jobs:
-  build-backend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v3
-        with:
-          distribution: temurin
-          java-version: ${{ env.JAVA_VERSION }}
-          cache: "gradle"
-      - name: Build with Gradle
-        run: |
-          java -version
-          backend/gradlew clean shadowjar
-      - uses: actions/upload-artifact@v3
-        with:
-          name: backend
-          path: |
-            backend/build/libs/
-            plugins/*-plugin/build/libs/
+  backend-p1:
+    uses: ./.github/workflows/backend-p1.yml
 
   docker-build:
     runs-on: ubuntu-latest
@@ -82,38 +63,9 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  test-backend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v3
-        with:
-          distribution: temurin
-          java-version: ${{ env.JAVA_VERSION }}
-          cache: "gradle"
-      - name: Check with Gradle
-        run: |
-          java -version
-          cd backend/
-          ./gradlew check
-      - uses: actions/upload-artifact@v3
-        if: success() || failure()
-        with:
-          name: backend-test-reports
-          path: backend/build/reports/
-      - name: Publish Test Report
-        uses: mikepenz/action-junit-report@v2
-        if: success() || failure()
-        with:
-          report_paths: "**/build/test-results/test/TEST-*.xml"
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          fail_on_failure: true
-
   deploy-backend:
     needs:
-      - build-backend
-      - test-backend
+      - backend-p1
       - docker-build
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/prod'
@@ -156,9 +108,7 @@ jobs:
 
   deploy-backend-ec2:
     needs:
-      - build-backend
-      - test-backend
-      - docker-build
+      - backend-p1
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/test'
     steps:
