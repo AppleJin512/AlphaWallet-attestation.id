@@ -10,89 +10,11 @@ on:
 
 jobs:
   build-frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: env injection
-        run: |
-          BRANCH_NAME="${GITHUB_REF#refs/*/}"
-          case "${BRANCH_NAME}" in
-          prod)
-            BASE_BACKEND_URL=https://backend.attestation.id
-            ;;
-          test)
-            BASE_BACKEND_URL=https://backend-test.attestation.id
-            ;;
-          *)
-            BASE_BACKEND_URL=https://backend-stage.attestation.id
-            ;;
-          esac
-          echo "BASE_BACKEND_URL=${BASE_BACKEND_URL}" >> $GITHUB_ENV
-      - name: Make envfile
-        uses: SpicyPizza/create-envfile@v1
-        with:
-          envkey_BASE_BACKEND_URL: ${{ env.BASE_BACKEND_URL }}
-          envkey_RECAPTCHA_CLIENT_KEY: ${{ secrets.RECAPTCHA_CLIENT_KEY }}
-          envkey_VALIDITY: 2592000
-          envkey_ATTESTOR: AlphaWallet
-          envkey_AUTH0_DOMAIN: auth0.attestation.id
-          envkey_AUTH0_CLIENTID: 1muawhvAEzeLRAtUz41XIjWCsdhTf4e2
-          file_name: frontend/.env
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 14
-          cache: "npm"
-          cache-dependency-path: frontend/package-lock.json
-      - run: |
-          echo -n "Node version: "
-          node -v
-          echo -n "Npm version: "
-          npm -v
-      - name: frontend building
-        run: |
-          cd frontend/
-          npm ci
-          npm run build
-      - uses: actions/upload-artifact@v3
-        with:
-          name: frontend
-          path: frontend/public/
-
-  # test-frontend:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - uses: actions/setup-node@v3
-  #       with:
-  #         node-version: 14
-  #         cache: "npm"
-  #         cache-dependency-path: frontend/package-lock.json
-  #     - run: |
-  #         echo -n "Node version: "
-  #         node -v
-  #         echo -n "Npm version: "
-  #         npm -v
-  #     - name: testing
-  #       run: |
-  #         cd frontend/
-  #         npm ci
-  #         npm run test -- --ci --colors
-  #     - uses: actions/upload-artifact@v3
-  #       if: success() || failure()
-  #       with:
-  #         name: frontend-test-reports
-  #         path: frontend/reports/
-  #     - uses: IgnusG/jest-report-action@master
-  #       if: success() || failure()
-  #       with:
-  #         access-token: ${{ secrets.GITHUB_TOKEN }}
-  #         junit-file: reports/junit/junit.xml
-  #         working-directory: frontend/
+    uses: ./.github/workflows/frontend-p1.yml
 
   deploy-frontend:
     needs:
       - build-frontend
-      # - test-frontend
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && (
       github.ref == 'refs/heads/prod' ||
