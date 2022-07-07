@@ -2,6 +2,7 @@ import { writable } from "svelte/store";
 import * as cryptoUtils from "../common/CryptoUtils";
 
 export const auth0AccessToken = writable<string>("");
+export const testValidity = writable<number>(0);
 export const requestEmail = writable<string>("");
 export const sameEmail = writable<boolean>(false);
 export const currentWallet = writable<string>("");

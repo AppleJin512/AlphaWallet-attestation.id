@@ -1,5 +1,5 @@
 <script>
-  import * as walletService from "../common/WalletService";
+	import * as walletService from "../common/WalletService";
   import * as flow from "../common/Flow";
   import { current } from "../common/Flow";
   import {
@@ -9,6 +9,7 @@
     getRawPair,
     saveAttestation,
     providerName,
+    testValidity,
   } from "../common/AppState";
   import { createAttestationRequestAndSecret } from "../attestation/AttesationUtils";
   import * as cryptoUtils from "../common/CryptoUtils";
@@ -16,7 +17,6 @@
   import { onMount } from "svelte";
 
   const BASE_BACKEND_URL = __myapp.env.BASE_BACKEND_URL;
-  const VALIDITY = __myapp.env.VALIDITY;
   const ATTESTOR = __myapp.env.ATTESTOR;
 
   let isLoading = false;
@@ -60,7 +60,7 @@
               "x-pap-id-provider": "auth0",
             },
             body: JSON.stringify({
-              validity: VALIDITY,
+              validity: getValidity(),
               attestor: ATTESTOR,
               publicRequest: requestAndSecret.result.request,
             }),
@@ -91,6 +91,10 @@
       isLoading = false;
     }
   };
+
+  function getValidity() {
+    return $testValidity > 0 ? Math.min( $testValidity, __myapp.env.VALIDITY ) : __myapp.env.VALIDITY;    
+  }
 
   function connectWalletClick() {
     walletService.connect($providerName);

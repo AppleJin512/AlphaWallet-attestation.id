@@ -11,6 +11,7 @@
     providerName,
     requestEmail,
     sameEmail,
+    testValidity,
   } from "./common/AppState";
   import { initAuth } from "./common/AuthService";
   import CurrentStep from "./component/CurrentStep.svelte";
@@ -71,6 +72,9 @@
     if (data.debug) {
       console.log("attestation.id postMessage data received: ", data);
     }
+    if (data.validity !== undefined && typeof data.validity === "number" && data.validity > 0) {
+      $testValidity = data.validity;
+    }
 
     if (data.providerName) {
       $providerName = data.providerName;
@@ -85,7 +89,7 @@
       const savedEmail = await getCurrentEmail();
 
       if (data.email === savedEmail ){ $sameEmail = true; }
-      
+            
       if (!$sameEmail || (data.address && address && (data.address.toLowerCase() !== address.toLowerCase()))) {
         clearAttestation();
         reply({
