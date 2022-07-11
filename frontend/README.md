@@ -88,6 +88,7 @@ As for `options`, there are several optional items:
 - container: the id of DOM element which will be the parent of `Application Page` which is shown when no local attestation existing. This item is useful when caller wants to control the way to show it.
 - providerName: the default provider used by web3Modal, it's value needs to be consistent with the name of the provider available in web3Modal.
 - email: the default email recevied the OTP and signed the attestation. If set this option, this email will autofill into the input in the Email Page and autosend the OTP to this email.
+- validity: expiration period of attestation.id for test purposes only. if it is recognized that the stored attestation is expired, the system would require generating a new attestation. if a user set this value greater than the system's allowed validity, it will be ignored.
 - debug: default is `false`. When it is true, there will a log `attestation.id postMessage data received:***` in the browser console.
 
 To use these options:
