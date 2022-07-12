@@ -84,19 +84,31 @@ The usage is simple, with two steps:
 
 As for `options`, there are several optional items:
 
-- force: default is `false`. When it is true, an iframe will be shown even `attestation + secret` saved in local storage. It will be useful when caller wants to reapply attestation anyway.
-- container: the id of DOM element which will be the parent of `Application Page` which is shown when no local attestation existing. This item is useful when caller wants to control the way to show it.
-- providerName: the default provider used by web3Modal, it's value needs to be consistent with the name of the provider available in web3Modal.
-- email: the default email recevied the OTP and signed the attestation. If set this option, this email will autofill into the input in the Email Page and autosend the OTP to this email.
+- force: Default is `false`. When it is true, an iframe will be shown even `attestation + secret` saved in indexedDB. It will be useful when caller wants to reapply attestation anyway.
+- container: The id of DOM element which will be the parent of `Application Page` which is shown when no local attestation existing. This item is useful when caller wants to control the way to show it.
+- providerName: The default provider used by web3Modal, it's value needs to be consistent with the name of the provider available in web3Modal.
+- email: The default email recevied the OTP and signed the attestation. If set this option, this email will autofill into the input in the Email Page and autosend the OTP to this email. This value is reserved for backward compatibility.
 - validity: expiration period of attestation.id for test purposes only. if it is recognized that the stored attestation is expired, the system would require generating a new attestation. if a user set this value greater than the system's allowed validity, it will be ignored.
-- debug: default is `false`. When it is true, there will a log `attestation.id postMessage data received:***` in the browser console.
+- type, value, account: A new set of user information to deternmine a unique attestation. This format is designed for the new version of attestation.id.
+  - type: It could be one of `email`, `twitter` or anything else. The default value is `email`.
+  - value: It's an actual identiciation data corresponding to `type`. (e.g. `abc123@gmail.com` or `@mytwitteraccount`).
+  - account: Ethereum wallet address connected by user.
+- debug: Default is `false`. When it is true, there will a log `attestation.id postMessage data received:***` in the browser console.
 
 To use these options:
 
 ```js
   Attestor.onReady(function (data) {
     ...
-  }, {force: true, container: 'containerId', providerName: 'providerName', email:'test@test.com', debug:true});
+  }, {force: true, container: 'containerId', providerName: 'providerName', email:'test@test.com', validity: 123, debug:true});
 ```
 
-Note: `force` , `container` , `providerName`, `email` , `debug` are both optional.
+For the new version:
+
+```js
+  Attestor.onReady(function (data) {
+    ...
+  }, {force: true, container: 'containerId', providerName: 'providerName', validity: 123, type: "email", value:'test@test.com', account:'walletAddress', debug:true});
+```
+
+Note: All the fields are optional.

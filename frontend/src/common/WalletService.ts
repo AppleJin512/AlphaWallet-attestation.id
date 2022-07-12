@@ -1,5 +1,5 @@
 import * as flow from "../common/Flow";
-import { currentWallet, saveCurrentAccount } from "./AppState";
+import { currentWallet } from "./AppState";
 import { current, saveCurrentStep } from "./Flow";
 
 declare let window: any;
@@ -136,7 +136,6 @@ function updateCurrentStatus(accounts) {
     console.log("no account");
   } else {
     currentWallet.set(accounts[0]);
-    saveCurrentAccount(accounts[0]);
   }
 }
 
@@ -158,7 +157,8 @@ function registerEthListener(web3ModalProvider) {
         console.log("Connection disconnected, go to the first step.");
         reset();
       } else {
-        saveCurrentAccount(accounts[0]);
+        //saveCurrentAccount(accounts[0]);
+        currentWallet.set(accounts[0]);
       }
     })
     .on("chainChanged", (chainId) => {

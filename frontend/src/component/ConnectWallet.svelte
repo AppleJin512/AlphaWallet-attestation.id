@@ -3,16 +3,18 @@
   import * as flow from "../common/Flow";
   import { current } from "../common/Flow";
   import {
+    attestationDb,
     auth0AccessToken,
     currentWallet,
-    getRawEmail,
-    getRawPair,
-    saveAttestation,
+    currentEmail,
+    type,
+    getEmail,
+    getType,
     providerName,
+    keccak256,
     testValidity,
   } from "../common/AppState";
   import { createAttestationRequestAndSecret } from "../attestation/AttesationUtils";
-  import * as cryptoUtils from "../common/CryptoUtils";
   import { bigintToHex } from "bigint-conversion";
   import { onMount } from "svelte";
 
@@ -33,52 +35,79 @@
 
   const gotoSign = async () => {
     try {
-      if (!getRawPair()) {
+      $currentEmail = await getEmail();
+      $type = getType();
+      
+      if (!$currentEmail || !$type) {
         return;
       }
-
-      const email = await cryptoUtils.decrypt(
-        getRawPair().privateKey,
-        getRawEmail()
-      );
 
       isLoading = true;
       const requestAndSecret = await createAttestationRequestAndSecret(
         "mail",
-        email,
+        $currentEmail,
         $currentWallet,
         $providerName
       );
       if (requestAndSecret.result.request) {
         try {
-          fetch(BASE_BACKEND_URL + "/api/attestation", {
-            method: "POST",
-            headers: {
-              Accept: "application/json",
-              "Content-Type": "application/json",
-              "x-pap-ac": $auth0AccessToken,
-              "x-pap-id-provider": "auth0",
-            },
-            body: JSON.stringify({
-              validity: getValidity(),
-              attestor: ATTESTOR,
-              publicRequest: requestAndSecret.result.request,
-            }),
-          })
-            .then(async (response) => {
-              if (response.status === 201) {
-                let result = await response.json();
-                saveAttestation({
-                  attestation: result.attestation,
-                  requestSecret: bigintToHex(requestAndSecret.secret),
-                });
-                flow.saveCurrentStep(flow.transition[$current].nextStep);
-              }
+          if ($type === "email") {
+            fetch(BASE_BACKEND_URL + "/api/attestation", {
+              method: "POST",
+              headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                "x-pap-ac": $auth0AccessToken,
+                "x-pap-id-provider": "auth0",
+              },
+              body: JSON.stringify({
+                validity: getValidity(),
+                attestor: ATTESTOR,
+                publicRequest: requestAndSecret.result.request,
+              }),
             })
-            .catch((error) => {
-              isLoading = false;
-              console.error(error);
-            });
+              .then(async (response) => {
+                if (response.status === 201) {
+                  let result = await response.json();
+                  await attestationDb.insertAttestation($type, keccak256($currentEmail.toLowerCase()), keccak256($currentWallet.toLowerCase()), {
+                    attestation: result.attestation,
+                    requestSecret: bigintToHex(requestAndSecret.secret),
+                  });
+                  flow.saveCurrentStep(flow.transition[$current].nextStep);
+                }
+              })
+              .catch((error) => {
+                isLoading = false;
+                console.error(error);
+              });
+          } else if ($type === "twitter") {
+            await getPublicAttestation(BASE_BACKEND_URL + "/api/attestation/public", {
+              method: "POST",
+              headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                "x-pap-ac": $auth0AccessToken,
+                "x-pap-id-provider": "auth0",
+              },
+              body: JSON.stringify({
+                id: "id",
+                message: "message",
+                signature: "signature",
+                ethAddress: "ethAdress",
+                identifier: "identifier",
+              }),
+            })
+              .then(async (response) => {
+                if (response.status === 201) {
+                  console.log("getting a public attestation");
+                  flow.saveCurrentStep(flow.transition[$current].nextStep);
+                }
+              })
+              .catch((error) => {
+                isLoading = false;
+                console.error(error);
+              });
+          }
         } catch (error) {
           isLoading = false;
           canTry = true;
@@ -91,6 +120,13 @@
       isLoading = false;
     }
   };
+
+  // This function is only used to test the second API (attestation/public).
+  async function getPublicAttestation(url, withParameter) {
+    return {
+      status: 201,
+    };
+  }
 
   function getValidity() {
     return $testValidity > 0 ? Math.min( $testValidity, __myapp.env.VALIDITY ) : __myapp.env.VALIDITY;    

@@ -1,29 +1,26 @@
 <script lang="ts">
-  import * as flow from "../common/Flow";
+	import * as flow from "../common/Flow";
 
-  import { getRawAttestation, sameEmail } from "../common/AppState";
+  import { attestationDb, currentWallet, type, keccak256, currentEmail } from "../common/AppState";
   import { hexToBigint } from "bigint-conversion";
   import { parseAttestation } from "../attestation/AttesationUtils";
 
   import CountDown from "./CountDown.svelte";
   import { onMount } from "svelte";
-
-  const attestation = getRawAttestation();
+  
+  let attestation;
   let notBefore: Date;
   let notAfter: Date;
 
-  if (!attestation) {
-    flow.current.set(flow.start);
-  } else {
-    notBefore = parseAttestation(attestation.attestation).signedInfo.validity
-      .notBefore.generalizedTime;
-    notAfter = parseAttestation(attestation.attestation).signedInfo.validity
-      .notAfter.generalizedTime;
-  }
-
   onMount(async () => {
-    if (window.location !== window.parent.location && $sameEmail) {
-      returnAndClose();
+    attestation = await attestationDb.getAttestation($type, keccak256($currentEmail.toLowerCase()), keccak256($currentWallet.toLowerCase()));
+    if (!attestation) {
+      flow.current.set(flow.start);
+    } else {
+      notBefore = parseAttestation(attestation.attestation).signedInfo.validity
+        .notBefore.generalizedTime;
+      notAfter = parseAttestation(attestation.attestation).signedInfo.validity
+        .notAfter.generalizedTime;
     }
   });
 
@@ -47,7 +44,7 @@
   <div class="title">Success!</div>
   <CountDown {notAfter} {notBefore} />
   <div class="status">
-    {#if window.location !== window.parent.location && !$sameEmail}
+    {#if window.location !== window.parent.location}
       <button on:click={returnAndClose}>Close</button>
     {/if}
     <div>

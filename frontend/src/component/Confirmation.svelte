@@ -1,12 +1,10 @@
 <script>
   import { onMount } from "svelte";
-  import * as cryptoUtils from "../common/CryptoUtils";
   import * as flow from "../common/Flow";
   import { current } from "../common/Flow";
   import {
-    getRawEmail,
-    getRawPair,
     auth0AccessToken,
+    getEmail,
   } from "../common/AppState";
 
   import { authHandler, initAuth } from "../common/AuthService";
@@ -136,19 +134,12 @@
       supportPaste = true;
     }
     document.getElementById("code0")?.focus();
-    await getEmail();
+      
+    email = await getEmail();
     document.addEventListener("paste", pasteListener);
 
     submit();
   });
-
-  const getEmail = async () => {
-    if (getRawPair()) {
-      email = await cryptoUtils.decrypt(getRawPair().privateKey, getRawEmail());
-    } else {
-      console.log("key pair missed...");
-    }
-  };
 
   const confirm = () => {
     isLoading = true;

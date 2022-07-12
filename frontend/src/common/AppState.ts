@@ -1,46 +1,51 @@
 import { writable } from "svelte/store";
 import * as cryptoUtils from "../common/CryptoUtils";
+import { AttestationDb } from "./AttestationDb";
 
+export const type = writable<string>("");
+export const currentEmail = writable<string>("");
 export const auth0AccessToken = writable<string>("");
 export const testValidity = writable<number>(0);
 export const requestEmail = writable<string>("");
-export const sameEmail = writable<boolean>(false);
 export const currentWallet = writable<string>("");
 export const providerName = writable<string>("");
 
-const STORAGE_KEY_CURRENT_ACCOUNT = "currentAccount";
+export const attestationDb = new AttestationDb();
+attestationDb.initDb();
 
-export function getRawCurrentAccount() {
-  return localStorage.getItem(STORAGE_KEY_CURRENT_ACCOUNT);
-}
-
-export function saveCurrentAccount(account: string) {
-  localStorage.setItem(STORAGE_KEY_CURRENT_ACCOUNT, account);
-}
+declare let window: any;
+export const keccak256 = window.keccak256;
 
 const STORAGE_KEY_EMAIL = "email";
 
-export function getRawEmail() {
-  return localStorage.getItem(STORAGE_KEY_EMAIL);
+export async function getEmail() {
+  const currentKey = getRawPair();
+  if (currentKey) {
+    try {
+      return await cryptoUtils.decrypt(
+        getRawPair().privateKey,
+        localStorage.getItem(STORAGE_KEY_EMAIL)
+      );
+    } catch (e) {
+      console.error(e);
+      return "";
+    }
+  }
+  return "";
 }
 
 export function saveEmail(email: string) {
   localStorage.setItem(STORAGE_KEY_EMAIL, email);
 }
 
-export async function getCurrentEmail() {
-  const currentEmail = getRawEmail();
-  const currentKey = getRawPair();
-  if (currentEmail && currentKey) {
-    try {
-      return await cryptoUtils.decrypt(getRawPair().privateKey, getRawEmail());
-    } catch (e) {
-      console.error(e);
-      return "";
-    }
-  } else {
-    return "";
-  }
+const STROAGE_KEY_TYPE = "type";
+
+export function getType() {
+  return localStorage.getItem(STROAGE_KEY_TYPE);
+}
+
+export function saveType(type: string) {
+  return localStorage.setItem(STROAGE_KEY_TYPE, type);
 }
 
 const STORAGE_KEY_PAIR = "pair";
@@ -53,36 +58,19 @@ export function savePair(pair: { publicKey: string; privateKey: string }) {
   localStorage.setItem(STORAGE_KEY_PAIR, JSON.stringify(pair));
 }
 
-const STORAGE_KEY_OTP = "otp";
+// const STORAGE_KEY_OTP = "otp";
 
-export function getRawOTP() {
-  return localStorage.getItem(STORAGE_KEY_OTP);
-}
+// export function getRawOTP() {
+//   return localStorage.getItem(STORAGE_KEY_OTP);
+// }
 
-export function saveOTP(otp: string) {
-  localStorage.setItem(STORAGE_KEY_OTP, otp);
-}
+// export function saveOTP(otp: string) {
+//   localStorage.setItem(STORAGE_KEY_OTP, otp);
+// }
 
-export function removeOTP() {
-  localStorage.removeItem(STORAGE_KEY_OTP);
-}
-
-const STORAGE_KEY_ATTESTATION = "attestation";
-
-export function getRawAttestation() {
-  return JSON.parse(localStorage.getItem(STORAGE_KEY_ATTESTATION));
-}
-
-export function saveAttestation(attestation: {
-  attestation: string;
-  requestSecret: string;
-}) {
-  localStorage.setItem(STORAGE_KEY_ATTESTATION, JSON.stringify(attestation));
-}
-
-export function clearAttestation() {
-  localStorage.removeItem(STORAGE_KEY_ATTESTATION);
-}
+// export function removeOTP() {
+//   localStorage.removeItem(STORAGE_KEY_OTP);
+// }
 
 export function clearAll() {
   localStorage.clear();

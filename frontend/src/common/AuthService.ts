@@ -3,7 +3,6 @@ import { writable } from "svelte/store";
 import { conf } from "./Constants";
 
 export const authHandler = writable<any>(null);
-//export const email = writable<any>(null);
 
 export async function initAuth() {
   const auth0Js = new auth0.WebAuth(conf.AUTH0);

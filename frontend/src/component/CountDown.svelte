@@ -2,18 +2,13 @@
   import * as flow from "../common/Flow";
   import * as cryptoUtils from "../common/CryptoUtils";
   import { writable } from "svelte/store";
-  import { getRawEmail, getRawPair } from "../common/AppState";
+  import { currentEmail } from "../common/AppState";
 
   export let notBefore: Date;
   export let notAfter: Date;
 
   const currentTime = writable(new Date().getTime());
   setInterval(() => currentTime.set(new Date().getTime()), 1000);
-
-  const emailPromise = cryptoUtils.decrypt(
-    getRawPair().privateKey,
-    getRawEmail()
-  );
 
   let timeLeft = 0;
 
@@ -26,11 +21,11 @@
 </script>
 
 <div class="countdown">
-  {#await emailPromise then email}
+  {#if $currentEmail}
     <div class="header">
-      Attestation for <scan class="subject">{email}</scan>
+      Attestation for <scan class="subject">{$currentEmail}</scan>
     </div>
-  {/await}
+  {/if}
   <div class="body">
     <div class="count subject">{timeLeft}</div>
     <div class="unit">SECONDS</div>

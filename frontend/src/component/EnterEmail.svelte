@@ -4,16 +4,13 @@
   import * as flow from "../common/Flow";
   import { current } from "../common/Flow";
   import {
-    getRawPair,
     saveEmail,
     savePair,
+    getRawPair,
     requestEmail,
-    getRawAttestation,
   } from "../common/AppState";
 
   import { authHandler } from "../common/AuthService";
-
-  import { parseAttestation, expired } from "../attestation/AttesationUtils";
 
   let disabled;
   let isLoading = false;
@@ -21,7 +18,6 @@
   let inputDisabled = "";
   let inIframe = window.location !== window.parent.location;
 
-  let attestationValid = false;
   let autoSubmitFired = false;
 
   async function onSubmit(token) {
@@ -76,15 +72,6 @@
   onMount(async () => {
     validateEmail(email);
     document.addEventListener("paste", pasteListener);
-
-    let attestation = getRawAttestation();
-    let parsedAttestation;
-    if (attestation) {
-      parsedAttestation = parseAttestation(attestation.attestation);
-      if (!expired(parsedAttestation)) {
-        attestationValid = true;
-      }
-    }
   });
 
   async function pasteListener(e) {
@@ -102,13 +89,9 @@
     if ($requestEmail) {
       inputDisabled = "disabled";
     }
-
-    if (!(attestationValid && getRawAttestation())) {
-      // if input not disabled then auto-click "Submit"
-      if (!disabled && !autoSubmitFired) {
-        autoSubmitFired = true;
-        onSubmit(1);
-      }
+    if (!disabled && !autoSubmitFired) {
+      autoSubmitFired = true;
+      onSubmit(1);
     }
   }
 </script>
