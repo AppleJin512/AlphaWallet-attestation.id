@@ -55,6 +55,7 @@ jobs:
             github.ref == 'refs/heads/prod' ||
             github.ref == 'refs/heads/stage' ||
             github.ref == 'refs/heads/main' ||
+            github.ref == 'refs/heads/test' ||
             github.ref == 'refs/heads/ci-testing'
             ) }}
           tags: ${{ env.IMAGES }}
@@ -66,7 +67,10 @@ jobs:
       - backend-p1
       - docker-build
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/prod'
+    if: github.event_name == 'push' && (
+      github.ref == 'refs/heads/prod' ||
+      github.ref == 'refs/heads/test'
+      )
     steps:
       - name: inject env based on branch
         run: |
