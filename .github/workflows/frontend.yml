@@ -9,7 +9,7 @@ on:
       - "frontend/**"
 
 jobs:
-  build-frontend:
+  frontend-p1:
     uses: ./.github/workflows/frontend-p1.yml
 
   deploy-frontend:
