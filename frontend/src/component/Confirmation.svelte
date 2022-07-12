@@ -1,13 +1,10 @@
 <script>
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import * as flow from "../common/Flow";
   import { current } from "../common/Flow";
-  import {
-    auth0AccessToken,
-    getEmail,
-  } from "../common/AppState";
+  import { getEmail, getRawPair, auth0AccessToken } from "../common/AppState";
 
-  import { authHandler, initAuth } from "../common/AuthService";
+  import { authHandler } from "../common/AuthService";
   import { errorMsgPipe } from "../common/Utils";
 
   let disabled = true;
@@ -20,10 +17,7 @@
 
   const submit = async function () {
     if (window.location.hash) {
-      if (!$authHandler) {
-        await initAuth();
-      }
-      $authHandler.parseUrl(window.location.href, async (err, authResult) => {
+      parseUrl(window.location.href, async (err, authResult) => {
         if (err) {
           console.log(err);
           errorMsg = err.message || err.errorDescription;
@@ -51,6 +45,11 @@
       });
     }
   };
+
+  function parseUrl(href, parseHandler) {
+    const access_token = href.match(/\#(?:access_token)\=([\S\s]*?)\&/)[1];
+    parseHandler(null, { accessToken: access_token });
+  }
 
   const resend = function () {
     flow.saveCurrentStep(flow.transition[$current].previousStep);
@@ -134,18 +133,38 @@
       supportPaste = true;
     }
     document.getElementById("code0")?.focus();
-      
-    email = await getEmail();
+    await getCurrentEmail();
     document.addEventListener("paste", pasteListener);
+
+    window.addEventListener(
+      "hashchange",
+      function () {
+        console.log("The hash has changed!");
+        submit();
+      },
+      false
+    );
 
     submit();
   });
+
+  onDestroy(() => {
+    window.removeEventListener("hashchange", null);
+  });
+
+  const getCurrentEmail = async () => {
+    if (getRawPair()) {
+      email = await getEmail();
+    } else {
+      console.log("key pair missed...");
+    }
+  };
 
   const confirm = () => {
     isLoading = true;
     disabled = true;
     $authHandler.login(email, codes.join(""), async (err, res) => {
-      console.log("login--", err, res);
+      console.log("afterlogin--", err, res);
       if (err) {
         if (
           err.description.indexOf("expired") > -1 ||
@@ -311,6 +330,7 @@
 
   .error {
     color: red;
+    word-break: break-word;
   }
 
   .resend {

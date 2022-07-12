@@ -6,6 +6,7 @@ export const authHandler = writable<any>(null);
 
 export async function initAuth() {
   const auth0Js = new auth0.WebAuth(conf.AUTH0);
+  document.cookie = "SameSite=None; Secure";
   authHandler.set({
     sendemail: async (email: String, sendHandler) => {
       auth0Js.passwordlessStart(
@@ -21,6 +22,7 @@ export async function initAuth() {
     },
     login: async (email, otp, loginHandler) => {
       console.log("passwordlessLogin", email, otp);
+      document.cookie = "SameSite=None; Secure";
 
       auth0Js.passwordlessLogin(
         {
@@ -32,10 +34,6 @@ export async function initAuth() {
           loginHandler(err, res);
         }
       );
-    },
-    parseUrl: (href, parseHandler) => {
-      const access_token = href.match(/\#(?:access_token)\=([\S\s]*?)\&/)[1];
-      parseHandler(null, { accessToken: access_token });
     },
   });
 }
