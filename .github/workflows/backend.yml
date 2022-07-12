@@ -14,8 +14,6 @@ env:
   AWS_REGION: ap-southeast-1
   ECR_REPOSITORY: attestation-id-backend
   ECS_CLUSTER: attestation-id-ecs
-  TASK_DEFINITION_FAMILY: attestation-id-backend-task
-  ECS_SERVICE: attestation-id-backend-svc
   ECS_CONTAINER: attestation-id-backend
 
 jobs:
@@ -70,6 +68,15 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/prod'
     steps:
+      - name: inject env based on branch
+        run: |
+          if [ "${GITHUB_REF}" = "refs/heads/prod" ]; then
+            echo "TASK_DEFINITION_FAMILY=attestation-id-backend-task-prod" >> $GITHUB_ENV
+            echo "ECS_SERVICE=attestation-id-backend-svc-prod" >> $GITHUB_ENV
+          else
+            echo "TASK_DEFINITION_FAMILY=attestation-id-backend-task-test" >> $GITHUB_ENV
+            echo "ECS_SERVICE=attestation-id-backend-svc-test" >> $GITHUB_ENV
+          fi
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -105,43 +112,3 @@ jobs:
           cluster: ${{ env.ECS_CLUSTER }}
           wait-for-service-stability: true
           wait-for-minutes: 5
-
-  deploy-backend-ec2:
-    needs:
-      - backend-p1
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/test'
-    steps:
-      - uses: actions/download-artifact@v3
-        with:
-          name: backend
-      - name: prepared for deployment
-        run: |
-          TMPDIR="$(mktemp -dp .)"
-          mkdir -pv "${TMPDIR}/plugins"
-          mv -fv backend/build/libs/*.jar "${TMPDIR}/backend-all.jar"
-          mv -fv plugins/*-plugin/build/libs/*.jar "${TMPDIR}/plugins"
-          echo "TMPDIR=${TMPDIR}" >> $GITHUB_ENV
-      - name: rsync deployments
-        uses: burnett01/rsync-deployments@5.2
-        with:
-          switches: -a
-          path: ${{ env.TMPDIR }}
-          remote_path: /tmp/
-          remote_host: ec2-13-229-212-189.ap-southeast-1.compute.amazonaws.com
-          remote_user: ubuntu
-          remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
-      - name: deploy
-        uses: appleboy/ssh-action@master
-        with:
-          host: ec2-13-229-212-189.ap-southeast-1.compute.amazonaws.com
-          username: ubuntu
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            sudo bash -e <<EOF
-            systemctl stop attestation-backend-test
-            rm -frv /usr/local/attestation-test
-            mv -fv "/tmp/${{ env.TMPDIR }}" /usr/local/attestation-test
-            systemctl start attestation-backend-test
-            rm -frv "/tmp/${{ env.TMPDIR }}"
-            EOF
