@@ -207,17 +207,6 @@ Be sure JDK 11 is installed on your computer before running.
   export ATTESTOR_PRIVATE_KEY=MIICSwIBADCB7AYHKoZIzj0CATCB4AIBATAsBgcqhkjOPQEBAiEA/////////////////////////////////////v///C8wRAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHBEEEeb5mfvncu6xVoGKVzocLBwKb/NstzijZWfKBWxb4F5hIOtp3JqPEZV2k+/wOEQio/Re0SKaFVBmcR9CP+xDUuAIhAP////////////////////66rtzmr0igO7/SXozQNkFBAgEBBIIBVTCCAVECAQEEIP0NZmYQRZgBrndcBR6RUJdEfBaQoF+/yUNQHpEM7s7GoIHjMIHgAgEBMCwGByqGSM49AQECIQD////////////////////////////////////+///8LzBEBCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAcEQQR5vmZ++dy7rFWgYpXOhwsHApv82y3OKNlZ8oFbFvgXmEg62ncmo8RlXaT7/A4RCKj9F7RIpoVUGZxH0I/7ENS4AiEA/////////////////////rqu3OavSKA7v9JejNA2QUECAQGhRANCAASs39hcmVWwLtOaxxgp26vuszAncsReQC1Rjb6K7IixLQESpfQ1cNaqivTzDYTgzz1cQ4GswxUvF7HOHaqL0gyP
   ```
 
-- Logs to AWS CloudWatch
-
-  ```sh
-  export SEND_CLOUDWATCH=true
-  export CLOUDWATCH_AWS_REGION=ap-southeast-1
-  export CLOUDWATCH_AWS_LOG_GROUP=/service/attestation_backend
-  # Or other credentials: https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/credentials.html#credentials-default
-  export CLOUDWATCH_AWS_ACCESS_KEY_ID=xxxxx
-  export CLOUDWATCH_AWS_SECRET_ACCESS_KEY=xxxxx
-  ```
-
 ### Kickoff server
 
 NOTE: Under development mode, if you have a problem to connect google server, please `export MICRONAUT_ENVIRONMENTS=dev` and change the proxy in `application-dev.yml`.
