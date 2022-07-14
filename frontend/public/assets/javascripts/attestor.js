@@ -1,11 +1,11 @@
-const attestationSite = "https://test.attestation.id/";
+const attestationSite = "https://stage.attestation.id";
 
 let Attestor = {
-  onReady: function (callback, option = { force: false }) {
+  onReady: function (callback, option = { force: true }) {
     let attestationFrame;
 
     if (option.force === undefined) {
-      option.force = false;
+      option.force = true;
     }
 
     window.addEventListener(

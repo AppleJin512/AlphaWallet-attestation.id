@@ -18,8 +18,8 @@
   import { bigintToHex } from "bigint-conversion";
   import { onMount } from "svelte";
 
-  const BASE_BACKEND_URL = __myapp.env.BASE_BACKEND_URL;
-  const ATTESTOR = __myapp.env.ATTESTOR;
+  const BASE_BACKEND_URL = import.meta.env.VITE_BASE_BACKEND_URL;
+  const ATTESTOR = import.meta.env.VITE_ATTESTOR;
 
   let isLoading = false;
   let canTry = false;
@@ -129,7 +129,7 @@
   }
 
   function getValidity() {
-    return $testValidity > 0 ? Math.min( $testValidity, __myapp.env.VALIDITY ) : __myapp.env.VALIDITY;    
+    return $testValidity > 0 ? Math.min( $testValidity, import.meta.env.VITE_VALIDITY ) : import.meta.env.VITE_VALIDITY;    
   }
 
   function connectWalletClick() {
