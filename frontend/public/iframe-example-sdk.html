@@ -10,7 +10,7 @@
       type="text/css"
     />
     <link rel="stylesheet" href="/global.css" />
-    <script src="https://stage.attestation.id/assets/javascripts/attestor.js"></script>
+    <script src="/assets/javascripts/attestor.js"></script>
   </head>
   <style>
     #attestationFrame {
@@ -101,7 +101,9 @@
       ).value;
       let modal = document.getElementById("myModal");
 
-      let option = {};
+      let option = {
+        validity: 30,
+      };
       if (parent === "container") {
         option.container = parent;
         window.addEventListener("message", (event) => {

@@ -1,4 +1,4 @@
-const attestationSite = "https://stage.attestation.id";
+const attestationSite = "https://test.attestation.id/";
 
 let Attestor = {
   onReady: function (callback, option = { force: false }) {
