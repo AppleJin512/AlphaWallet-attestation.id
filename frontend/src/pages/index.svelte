@@ -14,9 +14,8 @@
       testValidity,
   } from "../common/AppState";
   import { initAuth } from "../common/AuthService";
-  import CurrentStep from "../component/CurrentStep.svelte";
-  import FlowStatus from "../component/FlowStatus.svelte";
-
+  import Content from "../component/Content.svelte";
+  
   metatags.title = 'Attestation.id'
   metatags.description = 'v1.0.0'
 
@@ -133,6 +132,5 @@
 </script>
 
 <main>
-  <FlowStatus />
-  <CurrentStep />
+  <Content />
 </main>
