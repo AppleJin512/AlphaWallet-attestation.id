@@ -1,16 +1,16 @@
 <script>
   import { onMount, onDestroy } from "svelte";
-  import * as cryptoUtils from "../common/CryptoUtils";
-  import * as flow from "../common/Flow";
-  import { current } from "../common/Flow";
+  import * as cryptoUtils from "../../common/CryptoUtils";
+  import * as flow from "../../common/Flow";
+  import { current } from "../../common/Flow";
   import {
     saveEmail,
     savePair,
     getRawPair,
     requestEmail,
-  } from "../common/AppState";
+  } from "../../common/AppState";
 
-  import { authHandler } from "../common/AuthService";
+  import { authHandler } from "../../common/AuthService";
 
   let disabled;
   let isLoading = false;

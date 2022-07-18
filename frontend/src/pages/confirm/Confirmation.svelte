@@ -1,11 +1,11 @@
 <script>
   import { onMount, onDestroy } from "svelte";
-  import * as flow from "../common/Flow";
-  import { current } from "../common/Flow";
-  import { getEmail, getRawPair, auth0AccessToken } from "../common/AppState";
+  import * as flow from "../../common/Flow";
+  import { current } from "../../common/Flow";
+  import { getEmail, getRawPair, auth0AccessToken } from "../../common/AppState";
 
-  import { authHandler } from "../common/AuthService";
-  import { errorMsgPipe } from "../common/Utils";
+  import { authHandler } from "../../common/AuthService";
+  import { errorMsgPipe } from "../../common/Utils";
 
   let disabled = true;
   let isLoading = false;

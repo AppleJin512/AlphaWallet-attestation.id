@@ -1,8 +1,8 @@
 <script>
-  import ConnectWallet from "./ConnectWallet.svelte";
-  import EnterEmail from "./EnterEmail.svelte";
-  import Confirmation from "./Confirmation.svelte";
-  import Final from "./Final.svelte";
+  import ConnectWallet from "../pages/connect/ConnectWallet.svelte";
+  import EnterEmail from "../pages/enteremail/EnterEmail.svelte";
+  import Confirmation from "../pages/confirm/Confirmation.svelte";
+  import Final from "../pages/finish/Final.svelte";
   import {
     current,
     STEP_CONNECT_WALLET,

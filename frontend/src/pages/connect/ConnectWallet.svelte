@@ -1,7 +1,7 @@
 <script>
-	import * as walletService from "../common/WalletService";
-  import * as flow from "../common/Flow";
-  import { current } from "../common/Flow";
+	import * as walletService from "../../common/WalletService";
+  import * as flow from "../../common/Flow";
+  import { current } from "../../common/Flow";
   import {
     attestationDb,
     auth0AccessToken,
@@ -13,8 +13,8 @@
     providerName,
     keccak256,
     testValidity,
-  } from "../common/AppState";
-  import { createAttestationRequestAndSecret } from "../attestation/AttesationUtils";
+  } from "../../common/AppState";
+  import { createAttestationRequestAndSecret } from "../../attestation/AttesationUtils";
   import { bigintToHex } from "bigint-conversion";
   import { onMount } from "svelte";
 

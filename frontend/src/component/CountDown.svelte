@@ -1,6 +1,5 @@
 <script lang="ts">
   import * as flow from "../common/Flow";
-  import * as cryptoUtils from "../common/CryptoUtils";
   import { writable } from "svelte/store";
   import { currentEmail } from "../common/AppState";
 

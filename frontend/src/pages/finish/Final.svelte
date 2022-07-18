@@ -1,11 +1,11 @@
 <script lang="ts">
-	import * as flow from "../common/Flow";
+	import * as flow from "../../common/Flow";
 
-  import { attestationDb, currentWallet, type, keccak256, currentEmail } from "../common/AppState";
+  import { attestationDb, currentWallet, type, keccak256, currentEmail } from "../../common/AppState";
   import { hexToBigint } from "bigint-conversion";
-  import { parseAttestation } from "../attestation/AttesationUtils";
+  import { parseAttestation } from "../../attestation/AttesationUtils";
 
-  import CountDown from "./CountDown.svelte";
+  import CountDown from "../../component/CountDown.svelte";
   import { onMount } from "svelte";
   
   let attestation;
