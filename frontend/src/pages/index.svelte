@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { metatags } from '@roxi/routify';
+  import { metatags, goto } from '@roxi/routify';
   import { hexToBigint } from "bigint-conversion";
   import { onDestroy, onMount } from "svelte";
   import { parseAttestation, expired } from "../attestation/AttesationUtils";
@@ -12,9 +12,19 @@
       attestationDb,
       keccak256,
       testValidity,
+      auth0AccessToken,
+      isVerified,
+      confirmErrorMsg
   } from "../common/AppState";
   import { initAuth } from "../common/AuthService";
-  import Content from "../component/Content.svelte";
+  import * as flow from "../common/Flow";
+  import {
+    current,
+    STEP_CONFIRMATION,
+    STEP_ENTER_EMAIL,
+    STEP_CONNECT_WALLET
+  } from "../common/Flow";
+  import { errorMsgPipe } from "../common/Utils";
   
   metatags.title = 'Attestation.id'
   metatags.description = 'v1.0.0'
@@ -22,14 +32,69 @@
   let attestation;
   let attestationExpired;
 
+  const submit = async function () {
+    if (window.location.hash) {
+      parseUrl(window.location.href, async (err, authResult) => {
+        if (err) {
+          console.log(err);
+          $confirmErrorMsg = err.message || err.errorDescription;
+          if (history.replaceState) {
+            history.replaceState({}, "", "/");
+          }
+          $goto("/confirm")
+        } else {
+          if (authResult) {
+            try {
+              $isVerified = true;
+              $auth0AccessToken = authResult.accessToken;
+
+              if (history.replaceState) {
+                history.replaceState({}, "", "/");
+              }
+
+              flow.saveCurrentStep(flow.STEP_CONNECT_WALLET);
+            } catch (error) {
+              $confirmErrorMsg = errorMsgPipe(error.message);
+              $goto("/confirm");
+            }
+          }
+        }
+      });
+    }
+  };
+
+  function parseUrl(href, parseHandler) {
+    const access_token = href.match(/\#(?:access_token)\=([\S\s]*?)\&/)[1];
+    parseHandler(null, { accessToken: access_token });
+  }
+
   onMount(() => {
     saveType("email");
     registerEventListenerWhenCreatedByIntegration();
     initAuth();
-  });
 
+    window.addEventListener(
+      "hashchange",
+      function () {
+        console.log("The hash has changed!");
+        submit();
+      },
+      false
+    );
+
+    if ($current === STEP_ENTER_EMAIL) {
+      $goto("/email");
+    } else if ($current === STEP_CONFIRMATION) {
+      submit();
+      $goto("/confirm");
+    } else if ($current === STEP_CONNECT_WALLET) {
+      $goto("/connect");
+    }
+  });
+  
   onDestroy(() => {
     removeEventListenerAnyway();
+    window.removeEventListener("hashchange", null);
   });
 
   function registerEventListenerWhenCreatedByIntegration() {
@@ -132,5 +197,4 @@
 </script>
 
 <main>
-  <Content />
 </main>

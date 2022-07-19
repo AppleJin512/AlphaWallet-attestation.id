@@ -1,7 +1,8 @@
 <script>
-	import * as walletService from "../../common/WalletService";
-  import * as flow from "../../common/Flow";
-  import { current } from "../../common/Flow";
+  import { goto } from "@roxi/routify";
+	import * as walletService from "../common/WalletService";
+  import * as flow from "../common/Flow";
+  import { current, STEP_CONNECT_WALLET, STEP_FINAL } from "../common/Flow";
   import {
     attestationDb,
     auth0AccessToken,
@@ -13,10 +14,10 @@
     providerName,
     keccak256,
     testValidity,
-  } from "../../common/AppState";
-  import { createAttestationRequestAndSecret } from "../../attestation/AttesationUtils";
+  } from "../common/AppState";
+  import { createAttestationRequestAndSecret } from "../attestation/AttesationUtils";
   import { bigintToHex } from "bigint-conversion";
-  import { onMount } from "svelte";
+  import { beforeUpdate, onMount } from "svelte";
 
   const BASE_BACKEND_URL = import.meta.env.VITE_BASE_BACKEND_URL;
   const ATTESTOR = import.meta.env.VITE_ATTESTOR;
@@ -32,6 +33,12 @@
       walletService.connect($providerName);
     }
   }
+
+  beforeUpdate(() => {
+    if ($current !== STEP_CONNECT_WALLET) {
+      $goto("/");
+    }
+  });
 
   const gotoSign = async () => {
     try {
@@ -74,6 +81,9 @@
                     requestSecret: bigintToHex(requestAndSecret.secret),
                   });
                   flow.saveCurrentStep(flow.transition[$current].nextStep);
+                  if ($current === STEP_FINAL) {
+                    $goto("/finish");
+                  }
                 }
               })
               .catch((error) => {
@@ -101,6 +111,9 @@
                 if (response.status === 201) {
                   console.log("getting a public attestation");
                   flow.saveCurrentStep(flow.transition[$current].nextStep);
+                  if ($current === STEP_FINAL) {
+                    $goto("/finish");
+                  }
                 }
               })
               .catch((error) => {

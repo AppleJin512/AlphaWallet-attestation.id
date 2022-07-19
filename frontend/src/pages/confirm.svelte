@@ -1,55 +1,21 @@
 <script>
-  import { onMount, onDestroy } from "svelte";
-  import * as flow from "../../common/Flow";
-  import { current } from "../../common/Flow";
-  import { getEmail, getRawPair, auth0AccessToken } from "../../common/AppState";
+  import { goto } from "@roxi/routify";
+  import { onMount, beforeUpdate } from "svelte";
+  import * as flow from "../common/Flow";
+  import {
+    current,
+    STEP_CONFIRMATION,
+  } from "../common/Flow";
+  import { getEmail, getRawPair, isVerified, confirmErrorMsg } from "../common/AppState";
 
-  import { authHandler } from "../../common/AuthService";
-  import { errorMsgPipe } from "../../common/Utils";
-
+  import { authHandler } from "../common/AuthService";
+  
   let disabled = true;
   let isLoading = false;
 
   let email;
   let errorMsg;
-  let isVerfiied = false;
   let supportPaste = true;
-
-  const submit = async function () {
-    if (window.location.hash) {
-      parseUrl(window.location.href, async (err, authResult) => {
-        if (err) {
-          console.log(err);
-          errorMsg = err.message || err.errorDescription;
-          if (history.replaceState) {
-            history.replaceState({}, "", "/");
-          }
-        } else {
-          if (authResult) {
-            try {
-              isVerfiied = true;
-              $auth0AccessToken = authResult.accessToken;
-
-              if (history.replaceState) {
-                history.replaceState({}, "", "/");
-              }
-
-              flow.saveCurrentStep(flow.STEP_CONNECT_WALLET);
-            } catch (error) {
-              errorMsg = errorMsgPipe(error.message);
-              isLoading = false;
-              disabled = false;
-            }
-          }
-        }
-      });
-    }
-  };
-
-  function parseUrl(href, parseHandler) {
-    const access_token = href.match(/\#(?:access_token)\=([\S\s]*?)\&/)[1];
-    parseHandler(null, { accessToken: access_token });
-  }
 
   const resend = function () {
     flow.saveCurrentStep(flow.transition[$current].previousStep);
@@ -126,7 +92,13 @@
     tryToEnableComfirmButton();
   };
 
-  onMount(async () => {
+  beforeUpdate(() => {
+    if ($current !== STEP_CONFIRMATION) {
+      $goto("/");
+    }
+  });
+
+  onMount(async () => {    
     if (!(navigator.clipboard && navigator.clipboard.readText)) {
       supportPaste = false;
     } else {
@@ -136,20 +108,12 @@
     await getCurrentEmail();
     document.addEventListener("paste", pasteListener);
 
-    window.addEventListener(
-      "hashchange",
-      function () {
-        console.log("The hash has changed!");
-        submit();
-      },
-      false
-    );
-
-    submit();
-  });
-
-  onDestroy(() => {
-    window.removeEventListener("hashchange", null);
+    errorMsg = $confirmErrorMsg;
+    if ($confirmErrorMsg) {
+      isLoading = false;
+      disabled = false;
+    }
+    $confirmErrorMsg = "";
   });
 
   const getCurrentEmail = async () => {
@@ -221,7 +185,7 @@
   }
 </script>
 
-{#if !isVerfiied}
+{#if !$isVerified}
   <div class="title">Enter Code</div>
 
   <div class="content">

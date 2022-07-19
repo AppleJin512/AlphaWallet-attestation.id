@@ -1,16 +1,20 @@
 <script>
-  import { onMount, onDestroy } from "svelte";
-  import * as cryptoUtils from "../../common/CryptoUtils";
-  import * as flow from "../../common/Flow";
-  import { current } from "../../common/Flow";
+  import { goto } from "@roxi/routify";
+  import { beforeUpdate, onMount } from "svelte";
+  import * as cryptoUtils from "../common/CryptoUtils";
+  import * as flow from "../common/Flow";
+  import {
+    current,
+    STEP_CONFIRMATION,
+  } from "../common/Flow";
   import {
     saveEmail,
     savePair,
     getRawPair,
     requestEmail,
-  } from "../../common/AppState";
+  } from "../common/AppState";
 
-  import { authHandler } from "../../common/AuthService";
+  import { authHandler } from "../common/AuthService";
 
   let disabled;
   let isLoading = false;
@@ -38,6 +42,8 @@
                 );
 
                 flow.saveCurrentStep(flow.transition[$current].nextStep);
+                if ($current === STEP_CONFIRMATION)
+                  $goto("/confirm");
               });
             } else {
               isLoading = false;
@@ -68,6 +74,12 @@
   function enableSubmitBtn() {
     disabled = "";
   }
+
+  beforeUpdate(()=> {
+    if ($current !== flow.STEP_ENTER_EMAIL || ($current === flow.STEP_ENTER_EMAIL && !$authHandler)) {
+      $goto("/");
+    }
+  });
 
   onMount(async () => {
     validateEmail(email);

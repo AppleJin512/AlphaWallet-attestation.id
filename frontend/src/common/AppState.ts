@@ -5,6 +5,8 @@ import { AttestationDb } from "./AttestationDb";
 export const type = writable<string>("");
 export const currentEmail = writable<string>("");
 export const auth0AccessToken = writable<string>("");
+export const isVerified = writable<boolean>(false);
+export const confirmErrorMsg = writable<string>("");
 export const testValidity = writable<number>(0);
 export const requestEmail = writable<string>("");
 export const currentWallet = writable<string>("");

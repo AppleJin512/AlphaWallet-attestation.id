@@ -1,21 +1,31 @@
 <script lang="ts">
-	import * as flow from "../../common/Flow";
+  import { goto } from "@roxi/routify";
+	import * as flow from "../common/Flow";
+  import { current, STEP_FINAL } from "../common/Flow";
 
-  import { attestationDb, currentWallet, type, keccak256, currentEmail } from "../../common/AppState";
+  import { attestationDb, currentWallet, type, keccak256, currentEmail, isVerified } from "../common/AppState";
   import { hexToBigint } from "bigint-conversion";
-  import { parseAttestation } from "../../attestation/AttesationUtils";
+  import { parseAttestation } from "../attestation/AttesationUtils";
 
-  import CountDown from "../../component/CountDown.svelte";
-  import { onMount } from "svelte";
+  import CountDown from "../component/CountDown.svelte";
+  import { beforeUpdate, onMount } from "svelte";
   
   let attestation;
   let notBefore: Date;
   let notAfter: Date;
 
+  beforeUpdate(()=> {
+    if ($current !== STEP_FINAL) {
+      $goto("/");
+    }
+  });
+
   onMount(async () => {
     attestation = await attestationDb.getAttestation($type, keccak256($currentEmail.toLowerCase()), keccak256($currentWallet.toLowerCase()));
     if (!attestation) {
       flow.current.set(flow.start);
+      $isVerified = false;
+      $goto("/");
     } else {
       notBefore = parseAttestation(attestation.attestation).signedInfo.validity
         .notBefore.generalizedTime;
@@ -26,6 +36,8 @@
 
   function apply() {
     flow.saveCurrentStep(flow.start);
+    $isVerified = false;
+    $goto("/");
   }
 
   function returnAndClose() {
