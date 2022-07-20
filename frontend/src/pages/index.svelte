@@ -26,8 +26,8 @@
   } from "../common/Flow";
   import { errorMsgPipe } from "../common/Utils";
   
-  metatags.title = 'Attestation.id'
-  metatags.description = 'v1.0.0'
+  metatags.title = 'Attestation.id';
+  metatags.description = 'v1.0.0';
 
   let attestation;
   let attestationExpired;
@@ -41,7 +41,7 @@
           if (history.replaceState) {
             history.replaceState({}, "", "/");
           }
-          $goto("/confirm")
+          $goto("/confirm");
         } else {
           if (authResult) {
             try {
@@ -94,7 +94,6 @@
   
   onDestroy(() => {
     removeEventListenerAnyway();
-    window.removeEventListener("hashchange", null);
   });
 
   function registerEventListenerWhenCreatedByIntegration() {
@@ -192,6 +191,7 @@
 
   function removeEventListenerAnyway() {
     window.removeEventListener("message", null);
+    window.removeEventListener("hashchange", null);
   }
     
 </script>

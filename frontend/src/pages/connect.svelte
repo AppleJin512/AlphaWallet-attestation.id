@@ -16,11 +16,9 @@
     testValidity,
   } from "../common/AppState";
   import { createAttestationRequestAndSecret } from "../attestation/AttesationUtils";
+  import { BASE_BACKEND_URL, ATTESTOR } from "../common/Constants";
   import { bigintToHex } from "bigint-conversion";
   import { beforeUpdate, onMount } from "svelte";
-
-  const BASE_BACKEND_URL = import.meta.env.VITE_BASE_BACKEND_URL;
-  const ATTESTOR = import.meta.env.VITE_ATTESTOR;
 
   let isLoading = false;
   let canTry = false;
@@ -81,9 +79,7 @@
                     requestSecret: bigintToHex(requestAndSecret.secret),
                   });
                   flow.saveCurrentStep(flow.transition[$current].nextStep);
-                  if ($current === STEP_FINAL) {
-                    $goto("/finish");
-                  }
+                  $goto("/finish");
                 }
               })
               .catch((error) => {
@@ -111,9 +107,7 @@
                 if (response.status === 201) {
                   console.log("getting a public attestation");
                   flow.saveCurrentStep(flow.transition[$current].nextStep);
-                  if ($current === STEP_FINAL) {
-                    $goto("/finish");
-                  }
+                  $goto("/finish");
                 }
               })
               .catch((error) => {

@@ -6,3 +6,8 @@ export const conf = {
     responseType: "token id_token",
   },
 };
+
+export const BASE_BACKEND_URL =
+  import.meta.env.VITE_BASE_BACKEND_URL ||
+  "https://backend-stage.attestation.id";
+export const ATTESTOR = import.meta.env.VITE_ATTESTOR || "AlphaWallet";

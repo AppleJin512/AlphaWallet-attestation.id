@@ -42,8 +42,7 @@
                 );
 
                 flow.saveCurrentStep(flow.transition[$current].nextStep);
-                if ($current === STEP_CONFIRMATION)
-                  $goto("/confirm");
+                $goto("/confirm");
               });
             } else {
               isLoading = false;
