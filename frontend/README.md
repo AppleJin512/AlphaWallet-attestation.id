@@ -18,6 +18,8 @@ Here is an example of `.env.local`:
 VITE_BASE_BACKEND_URL=https://backend-stage.attestation.id
 VITE_VALIDITY=3600
 VITE_ATTESTOR=AlphaWallet
+VITE_AUTH0_DOMAIN=****
+VITE_AUTH0_CLIENTID=****
 ```
 
 Note: the key above is for testing only.

@@ -104,7 +104,7 @@
           if (event.data.type !== undefined)
             saveType(event.data.type);
           if (event.data.force) {
-            console.log("clear localStroage...")
+            
             reply({
               display: true,
             });
